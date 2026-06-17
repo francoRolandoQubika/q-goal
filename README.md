@@ -1,6 +1,6 @@
 # q-goal
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, and more.
+This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, and more. It also includes a Python (`uv`) workspace for data and generative-AI work (`etl`, `genai`).
 
 ## Features
 
@@ -16,6 +16,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Husky** - Git hooks for code quality
 - **Oxlint** - Oxlint + Oxfmt (linting & formatting)
 - **PWA** - Progressive Web App support
+- **Python workspace** - `etl` and `genai` projects managed with uv (Ruff for lint & format)
 
 ## Getting Started
 
@@ -26,6 +27,7 @@ or **locally with hot reload**. Both share the dependency and environment setup 
 
 - [Bun](https://bun.sh) (see `packageManager` in `package.json` for the pinned version)
 - [Docker](https://www.docker.com) — required for the Docker workflow, and the easiest way to run Postgres for local development
+- [uv](https://docs.astral.sh/uv/) — only needed to work on the Python projects (`etl`, `genai`)
 
 ### Install dependencies
 
@@ -113,6 +115,41 @@ The apps run on your machine with Bun; only the database needs to be provided.
 - Web app: [http://localhost:3001](http://localhost:3001)
 - API server: [http://localhost:3000](http://localhost:3000)
 
+## Python projects (`etl` & `genai`)
+
+`etl/` (data pipelines) and `genai/` (generative-AI workflows) are Python 3.13
+projects managed as a single [uv](https://docs.astral.sh/uv/) workspace, kept
+separate from the Bun/JS toolchain. The workspace shares one lockfile (`uv.lock`)
+and one virtual environment at the repo root.
+
+Install Python dependencies (creates `.venv` and resolves the workspace):
+
+```bash
+uv sync
+```
+
+Run a project's entry point:
+
+```bash
+uv run etl       # -> "Hello from etl!"
+uv run genai     # -> "Hello from genai!"
+```
+
+Add dependencies to a specific workspace member:
+
+```bash
+uv add --package etl pandas
+uv add --package genai openai
+```
+
+Lint and format Python with Ruff (also runs automatically on staged `*.py` files
+via the pre-commit hook):
+
+```bash
+uv run ruff check --fix
+uv run ruff format
+```
+
 ## UI Customization
 
 React web apps in this stack share shadcn/ui primitives through `packages/ui`.
@@ -152,10 +189,16 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 Environment variables are read from each app's `.env` file (baked into web builds for public variables) and overridden in `docker-compose.yml` for container networking.
 
+> The Python projects (`etl`, `genai`) are not yet containerized or deployed.
+
 ## Git Hooks and Formatting
 
 - Initialize hooks: `bun run prepare`
-- Run checks: `bun run check`
+- Run checks: `bun run check` (Oxlint + Oxfmt for JS/TS)
+- Lint/format Python: `uv run ruff check --fix && uv run ruff format`
+
+The pre-commit hook (Husky + lint-staged) runs Oxlint/Oxfmt on staged JS/TS files
+and Ruff on staged Python files.
 
 ## Project Structure
 
@@ -168,6 +211,8 @@ q-goal/
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── auth/        # Authentication configuration & logic
 │   └── db/          # Database schema & queries
+├── etl/             # Python data pipelines (uv workspace member)
+└── genai/           # Python GenAI workflows (uv workspace member)
 ```
 
 ## Available Scripts
@@ -191,3 +236,11 @@ q-goal/
 - `bun run docker:up`: Build and start the Docker Compose stack
 - `bun run docker:logs`: Tail logs from the Docker Compose stack
 - `bun run docker:down`: Stop the Docker Compose stack
+
+### Python (uv)
+
+- `uv sync`: Install/resolve the Python workspace
+- `uv run etl`: Run the `etl` entry point
+- `uv run genai`: Run the `genai` entry point
+- `uv run ruff check --fix`: Lint Python
+- `uv run ruff format`: Format Python
