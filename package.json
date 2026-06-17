@@ -60,6 +60,10 @@
     "*.{js,jsx,ts,tsx,mjs,cjs}": [
       "oxlint",
       "oxfmt --write"
+    ],
+    "*.py": [
+      "uv run ruff check --fix",
+      "uv run ruff format"
     ]
   },
   "packageManager": "bun@1.3.14"

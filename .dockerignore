@@ -26,3 +26,10 @@ docker-compose.yml
 **/.env
 **/.env.*
 !**/.env.example
+
+# Python
+**/__pycache__
+**/.venv
+**/.ruff_cache
+**/.mypy_cache
+**/.pytest_cache

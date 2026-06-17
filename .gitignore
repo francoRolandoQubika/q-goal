@@ -52,3 +52,13 @@ coverage
 .cache
 tmp
 temp
+
+# Python (uv: etl/, genai/)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
