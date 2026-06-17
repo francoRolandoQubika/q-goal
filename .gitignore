@@ -52,13 +52,3 @@ coverage
 .cache
 tmp
 temp
-
-# Python
-.venv
-__pycache__
-*.pyc
-*.pyo
-*.egg-info
-.pytest_cache
-.ruff_cache
-.mypy_cache

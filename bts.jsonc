@@ -6,26 +6,26 @@
 // Showcase: https://www.better-t-stack.dev/showcase
 // Sponsor: https://github.com/sponsors/AmanVarshney01
 //
-// Add new addons with: pnpm dlx create-better-t-stack add
+// Add new addons with: bun create better-t-stack add
 // This file is safe to delete
 
 {
   "$schema": "https://r2.better-t-stack.dev/schema.json",
   "version": "3.33.1",
-  "createdAt": "2026-06-17T15:24:16.637Z",
-  "reproducibleCommand": "pnpm create better-t-stack@latest . --frontend react-router --backend hono --runtime node --database none --orm none --api none --auth none --payments none --addons turborepo biome --examples none --db-setup none --web-deploy none --server-deploy none --no-git --package-manager pnpm --install",
-  "database": "none",
-  "orm": "none",
+  "createdAt": "2026-06-17T14:55:14.764Z",
+  "reproducibleCommand": "bun create better-t-stack@latest q-goal --frontend tanstack-router --backend hono --runtime bun --database postgres --orm drizzle --api none --auth better-auth --payments none --addons husky mcp oxlint pwa skills --examples ai --db-setup docker --web-deploy docker --server-deploy docker --git --package-manager bun --no-install",
+  "database": "postgres",
+  "orm": "drizzle",
   "backend": "hono",
-  "runtime": "node",
-  "frontend": ["react-router"],
-  "addons": ["turborepo", "biome"],
-  "examples": [],
-  "auth": "none",
+  "runtime": "bun",
+  "frontend": ["tanstack-router"],
+  "addons": ["husky", "mcp", "oxlint", "pwa", "skills"],
+  "examples": ["ai"],
+  "auth": "better-auth",
   "payments": "none",
-  "packageManager": "pnpm",
-  "dbSetup": "none",
+  "packageManager": "bun",
+  "dbSetup": "docker",
   "api": "none",
-  "webDeploy": "none",
-  "serverDeploy": "none",
+  "webDeploy": "docker",
+  "serverDeploy": "docker",
 }
