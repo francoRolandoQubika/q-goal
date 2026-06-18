@@ -1,0 +1,24 @@
+{
+  "name": "@q-goal/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@q-goal/db": "workspace:*",
+    "@q-goal/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@q-goal/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

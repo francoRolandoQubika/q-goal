@@ -53,12 +53,12 @@ coverage
 tmp
 temp
 
-# Python
-.venv
-__pycache__
-*.pyc
-*.pyo
-*.egg-info
-.pytest_cache
-.ruff_cache
-.mypy_cache
+# Python (uv: etl/, genai/)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/

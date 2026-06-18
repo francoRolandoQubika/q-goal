@@ -1,8 +1,33 @@
-import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+  server: {
+    port: 3001,
+  },
+  resolve: {
+    tsconfigPaths: true,
+  },
+  plugins: [
+    tailwindcss(),
+    tanstackRouter({
+      target: "react",
+      autoCodeSplitting: true,
+    }),
+    react(),
+    VitePWA({
+      registerType: "autoUpdate",
+      manifest: {
+        name: "q-goal",
+        short_name: "q-goal",
+        description: "q-goal - PWA Application",
+        theme_color: "#0c0c0c",
+      },
+      pwaAssets: { disabled: false, config: true },
+      devOptions: { enabled: true },
+    }),
+  ],
 });

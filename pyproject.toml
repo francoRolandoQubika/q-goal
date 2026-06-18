@@ -1,0 +1,13 @@
+[tool.uv.workspace]
+members = ["etl", "genai"]
+
+[dependency-groups]
+dev = ["ruff>=0.9"]
+
+[tool.ruff]
+target-version = "py313"
+# src layout — let ruff's import sorting recognize first-party packages
+src = ["etl/src", "genai/src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

@@ -1,18 +1,46 @@
 {
   "name": "q-goal",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "dotenv": "^17.2.2",
+      "zod": "^4.1.13",
+      "typescript": "^6",
+      "@types/bun": "^1.3.4",
+      "better-auth": "1.6.11",
+      "ai": "^6.0.3",
+      "next-themes": "^0.4.6",
+      "react": "^19.2.6",
+      "react-dom": "^19.2.6",
+      "@types/react": "^19.2.15",
+      "@types/react-dom": "^19.2.3"
+    }
+  },
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "check-types": "turbo check-types",
-    "dev:web": "turbo -F web dev",
-    "dev:server": "turbo -F server dev",
-    "check": "biome check --write ."
+    "dev": "bun run --filter '*' dev",
+    "build": "bun run --filter '*' build",
+    "check-types": "bun run --filter '*' check-types",
+    "dev:web": "bun run --filter web dev",
+    "dev:server": "bun run --filter server dev",
+    "db:push": "bun run --filter @q-goal/db db:push",
+    "db:studio": "bun run --filter @q-goal/db db:studio",
+    "db:generate": "bun run --filter @q-goal/db db:generate",
+    "db:migrate": "bun run --filter @q-goal/db db:migrate",
+    "db:start": "docker compose up -d postgres",
+    "db:watch": "docker compose up postgres",
+    "db:stop": "docker compose stop postgres",
+    "db:down": "docker compose down postgres",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "check": "oxlint && oxfmt --write",
+    "prepare": "husky"
   },
   "dependencies": {
     "@q-goal/env": "workspace:*",
@@ -20,10 +48,23 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.16",
     "@q-goal/config": "workspace:*",
-    "@types/node": "^22.13.14",
-    "turbo": "^2.9.16",
+    "@types/bun": "catalog:",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
+    "oxfmt": "^0.53.0",
+    "oxlint": "^1.68.0",
     "typescript": "catalog:"
-  }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs}": [
+      "oxlint",
+      "oxfmt --write"
+    ],
+    "*.py": [
+      "uv run ruff check --fix",
+      "uv run ruff format"
+    ]
+  },
+  "packageManager": "bun@1.3.14"
 }
