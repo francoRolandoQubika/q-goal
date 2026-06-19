@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+*.npy
+players.db
+players/
+faces/
+metadata.json
+players_manifest.json
+faces_manifest.json
