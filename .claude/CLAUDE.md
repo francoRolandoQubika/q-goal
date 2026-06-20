@@ -28,6 +28,7 @@ Packages in `packages/*` are imported as `@q-goal/<name>` — never use relative
 | TanStack layout route | `src/routes/{group}/route.tsx` | `apps/web/src/routes/_auth/route.tsx` |
 | TanStack page route | `src/routes/{name}.tsx` | `apps/web/src/routes/ai.tsx` |
 | React component | `src/components/{name}.tsx` | `apps/web/src/components/header.tsx` |
+| CSS tokens / brand styles | `src/styles/{name}.css` | `apps/web/src/styles/brand.css` |
 
 ### apps/server (Hono)
 
