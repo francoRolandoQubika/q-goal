@@ -1,0 +1,293 @@
+{
+  "version": "1.0.0",
+  "schema_version": "1.0.0",
+  "framework_version": "1.0.0",
+  "stack_profile": {
+    "services": [
+      {
+        "id": "web",
+        "name": "web",
+        "path": "apps/web",
+        "type": "frontend",
+        "language": "typescript",
+        "frameworks": {
+          "main": "React 19"
+        },
+        "testing": {},
+        "environment": {
+          "port": 3001
+        },
+        "file_count": 14,
+        "manifest_file": "apps/web/package.json"
+      },
+      {
+        "id": "server",
+        "name": "server",
+        "path": "apps/server",
+        "type": "backend",
+        "language": "typescript",
+        "frameworks": {
+          "main": "Hono 4"
+        },
+        "testing": {},
+        "environment": {
+          "port": 3000
+        },
+        "file_count": 1,
+        "manifest_file": "apps/server/package.json"
+      },
+      {
+        "id": "auth",
+        "name": "@q-goal/auth",
+        "path": "packages/auth",
+        "type": "library",
+        "language": "typescript",
+        "frameworks": {
+          "main": "Better-Auth 1.6"
+        },
+        "testing": {},
+        "file_count": 1,
+        "manifest_file": "packages/auth/package.json"
+      },
+      {
+        "id": "db",
+        "name": "@q-goal/db",
+        "path": "packages/db",
+        "type": "library",
+        "language": "typescript",
+        "frameworks": {
+          "orm": "Drizzle ORM 0.45"
+        },
+        "testing": {},
+        "file_count": 3,
+        "manifest_file": "packages/db/package.json"
+      },
+      {
+        "id": "ui",
+        "name": "@q-goal/ui",
+        "path": "packages/ui",
+        "type": "library",
+        "language": "typescript",
+        "frameworks": {},
+        "testing": {},
+        "file_count": 9,
+        "manifest_file": "packages/ui/package.json"
+      },
+      {
+        "id": "etl",
+        "name": "etl",
+        "path": "etl",
+        "type": "cli",
+        "language": "python",
+        "language_version": "3.13",
+        "frameworks": {},
+        "testing": {},
+        "file_count": 1,
+        "manifest_file": "etl/pyproject.toml"
+      },
+      {
+        "id": "genai",
+        "name": "genai",
+        "path": "genai",
+        "type": "cli",
+        "language": "python",
+        "language_version": "3.13",
+        "frameworks": {},
+        "testing": {},
+        "file_count": 1,
+        "manifest_file": "genai/pyproject.toml"
+      }
+    ],
+    "is_monorepo": true,
+    "workspace_tool": "npm workspaces",
+    "package_manager": "bun",
+    "infrastructure": [
+      "docker",
+      "docker-compose",
+      "nginx"
+    ],
+    "software_version_control": "github",
+    "file_counts": {
+      "total": 34,
+      "by_language": {
+        "typescript": 29,
+        "css": 2,
+        "python": 2,
+        "html": 1
+      }
+    },
+    "automation": {
+      "makefiles": [],
+      "justfiles": [],
+      "taskfiles": [],
+      "shell_scripts": [],
+      "ci_hints": [
+        {
+          "file": "docker-compose.yml",
+          "commands": [
+            "docker compose up -d postgres",
+            "docker compose up postgres",
+            "docker compose stop postgres",
+            "docker compose down postgres",
+            "docker compose build",
+            "docker compose up -d --build",
+            "docker compose down",
+            "docker compose logs -f"
+          ]
+        }
+      ]
+    },
+    "readme_run_sections": [
+      {
+        "path": "README.md",
+        "heading": "Getting Started",
+        "body": "This project uses PostgreSQL with Drizzle ORM. You can run it **fully in Docker** or **locally with hot reload**. Both share the dependency and environment setup below.",
+        "fenced_blocks": [
+          "bun install",
+          "cp apps/server/.env.example apps/server/.env\ncp apps/web/.env.example apps/web/.env",
+          "openssl rand -base64 32",
+          "bun run docker:up      # build + start (web, server, postgres)",
+          "bun run db:push",
+          "docker compose exec server bun run --filter @q-goal/db db:push",
+          "bun run db:start      # docker compose up -d postgres (host port 5433)",
+          "bun run db:push",
+          "bun run dev           # web + server",
+          "uv sync",
+          "uv run etl       # -> \"Hello from etl!\"\nuv run genai     # -> \"Hello from genai!\"",
+          "uv add --package etl pandas\nuv add --package genai openai",
+          "uv run ruff check --fix\nuv run ruff format"
+        ]
+      }
+    ],
+    "command_catalog": {
+      "setup": [
+        {
+          "tier": "readme",
+          "command": "bun install",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "readme",
+          "command": "bun run db:push",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "readme",
+          "command": "uv add --package etl pandas",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "readme",
+          "command": "uv add --package genai openai",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "readme",
+          "command": "uv run etl       # -> \"Hello from etl!\"",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "readme",
+          "command": "uv run genai     # -> \"Hello from genai!\"",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "readme",
+          "command": "uv sync",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        }
+      ],
+      "run_build": [
+        {
+          "tier": "readme",
+          "command": "bun run docker:up      # build + start (web, server, postgres)",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "package_manager",
+          "command": "bun run build",
+          "source": "documented_commands(package_json)",
+          "per_service": "_root"
+        },
+        {
+          "tier": "ci",
+          "command": "docker compose build",
+          "source": "docker-compose.yml"
+        }
+      ],
+      "start_dev": [
+        {
+          "tier": "readme",
+          "command": "bun run db:start      # docker compose up -d postgres (host port 5433)",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "readme",
+          "command": "bun run dev           # web + server",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "readme",
+          "command": "docker compose exec server bun run --filter @q-goal/db db:push",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "package_manager",
+          "command": "bun run dev",
+          "source": "documented_commands(package_json)",
+          "per_service": "_root"
+        },
+        {
+          "tier": "ci",
+          "command": "docker compose up -d --build",
+          "source": "docker-compose.yml"
+        },
+        {
+          "tier": "ci",
+          "command": "docker compose up -d postgres",
+          "source": "docker-compose.yml"
+        },
+        {
+          "tier": "ci",
+          "command": "docker compose up postgres",
+          "source": "docker-compose.yml"
+        }
+      ],
+      "run_lint": [
+        {
+          "tier": "readme",
+          "command": "uv run ruff check --fix",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "readme",
+          "command": "uv run ruff format",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
+          "tier": "package_manager",
+          "command": "bun run check",
+          "source": "documented_commands(package_json)",
+          "per_service": "_root"
+        }
+      ]
+    }
+  },
+  "resource_state": {
+    "skills": {},
+    "agents": {}
+  }
+}

@@ -2,19 +2,38 @@
   "mcpServers": {
     "better-t-stack": {
       "command": "bunx",
-      "args": ["create-better-t-stack@latest", "mcp"]
+      "args": [
+        "create-better-t-stack@latest",
+        "mcp"
+      ]
     },
     "context7": {
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"]
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
     },
     "shadcn": {
       "command": "npx",
-      "args": ["-y", "shadcn@latest", "mcp"]
+      "args": [
+        "-y",
+        "shadcn@latest",
+        "mcp"
+      ]
     },
     "better-auth": {
       "type": "http",
       "url": "https://mcp.inkeep.com/better-auth/mcp"
+    },
+    "code_graph": {
+      "command": "bash",
+      "args": [
+        "/Users/frolando/IdeaProjects/q-goal/.claude/scripts/code-review-graph-mcp.sh",
+        "serve",
+        "--repo",
+        "/Users/frolando/IdeaProjects/q-goal"
+      ]
     }
   }
 }

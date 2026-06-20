@@ -62,3 +62,10 @@ venv/
 .mypy_cache/
 .pytest_cache/
 .ipynb_checkpoints/
+
+.claude-temp/
+.codex-temp/
+.claude-backups/
+.codex-backups/
+qubika-agentic-framework/
+.mcp.json
