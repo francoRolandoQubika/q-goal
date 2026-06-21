@@ -146,6 +146,20 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
         </form.Subscribe>
       </form>
 
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full mt-4"
+        onClick={() =>
+          authClient.signIn.social(
+            { provider: "google", callbackURL: "/dashboard" },
+            { onError: (error) => toast.error(error.error.message || error.error.statusText) },
+          )
+        }
+      >
+        Sign in with Google
+      </Button>
+
       <div className="mt-4 text-center">
         <Button
           variant="link"
