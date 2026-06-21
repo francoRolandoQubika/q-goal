@@ -4,7 +4,7 @@ summary: >-
   **web** is a client-side React 19 single-page application (SPA) that serves
   the browser interface. It uses TanStack Router for file-based client-side
   routing...
-last_updated: '2026-06-18T21:06:25.817Z'
+last_updated: '2026-06-21T21:00:00.000Z'
 tags:
   - service
   - typescript
@@ -57,13 +57,20 @@ Key libraries: React 19, TanStack Router v1, @hookform/react, @ai-sdk/react, @q-
 4. `useChat` hook updates the `messages` array on each chunk
 5. Chat component re-renders, displaying the new assistant message
 
-**Authentication example:**
+**Authentication example (email/password):**
 1. User submits sign-in form (email + password)
 2. Form validator runs Zod schema check (email format, password ≥8 chars)
 3. On validation pass, `authClient.signIn.email()` sends credentials to server
 4. Server validates and issues a session cookie (HTTP-only, secure, SameSite=none)
 5. Browser stores cookie; subsequent requests include it automatically
 6. On success, TanStack Router navigates to `/dashboard`; on error, toast displays
+
+**Authentication example (Google OAuth):**
+1. User clicks "Sign in with Google" button on `/login`
+2. `authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" })` triggers a full browser redirect to Google's consent page
+3. After consent, Google redirects to the server's `/api/auth/callback/google` (handled by Better-Auth)
+4. Server completes the OAuth exchange and sets the session cookie
+5. Browser is redirected to `/dashboard`; on cancel or error, Better-Auth redirects back to `/login` with an error query param and a toast is displayed
 
 ## Data Layer
 
@@ -101,4 +108,4 @@ Additional environment setup is documented in the root README under "Getting Sta
 
 **useChat hook for streaming** — @ai-sdk/react's `useChat` hook abstracts message state and streaming from the server, exposing `messages`, `sendMessage`, and `status` props. The hook handles chunked responses automatically.
 
-**Better-Auth client for auth state** — `createAuthClient()` factory returns a client with hooks (`useSession()`) and methods (`signIn.email()`, `signUp.email()`, etc.). Session state is automatically persisted via HTTP-only cookies; logout clears both client state and the server session.
+**Better-Auth client for auth state** — `createAuthClient()` factory returns a client with hooks (`useSession()`) and methods (`signIn.email()`, `signUp.email()`, `signIn.social()`, etc.). Session state is automatically persisted via HTTP-only cookies; logout clears both client state and the server session. Google OAuth is triggered via `signIn.social({ provider: "google", callbackURL: "/dashboard" })` — no changes to `auth-client.ts` are needed to add new social providers.

@@ -62,7 +62,9 @@ Server and web each have their own `.env` file (copied from `.env.example` durin
 ```bash
 # apps/server/.env.example
 DATABASE_URL=postgresql://...
-AUTH_SECRET=<generated-by-openssl>
+BETTER_AUTH_SECRET=<generated-by-openssl>
+GOOGLE_CLIENT_ID=<from-google-cloud-console>
+GOOGLE_CLIENT_SECRET=<from-google-cloud-console>
 ```
 
 ## Gotchas
@@ -101,6 +103,27 @@ async function createOrder(data: OrderDto) {
     return order;
   });
 }
+```
+
+### Better-Auth OAuth Requires Cross-Origin Cookie Attributes
+
+When `socialProviders` (e.g. Google OAuth) are enabled, the auth callback runs on the server origin while the web app is on a different origin. Without `sameSite: "none"` + `secure: true`, the session cookie is silently dropped and the user is not authenticated after the OAuth redirect.
+
+```typescript
+// WRONG — OAuth callback cookie is rejected cross-origin
+betterAuth({ ... });
+
+// CORRECT — add advanced.defaultCookieAttributes
+betterAuth({
+  socialProviders: { google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET } },
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+      httpOnly: true,
+    },
+  },
+});
 ```
 
 ### TanStack Router Params Are Always Strings

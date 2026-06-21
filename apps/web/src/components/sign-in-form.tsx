@@ -127,7 +127,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
         className="w-full mt-4"
         onClick={() =>
           authClient.signIn.social(
-            { provider: "google", callbackURL: "/dashboard" },
+            { provider: "google", callbackURL: `${window.location.origin}/dashboard` },
             { onError: (error) => toast.error(error.error.message || error.error.statusText) },
           )
         }
