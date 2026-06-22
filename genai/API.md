@@ -2,11 +2,19 @@
 
 Base URL: `http://localhost:8002`
 
+> CORS is fully open (`*`) — call directly from the browser.
+> Interactive docs: `http://localhost:8002/docs`
+
 ---
 
 ## GET `/players/{id}`
 
 Returns full metadata for a player.
+
+**Request**
+```
+GET /players/1
+```
 
 **Response**
 ```json
@@ -28,14 +36,18 @@ Returns full metadata for a player.
 
 ## GET `/faces/{id}`
 
-Returns the player's cropped face image (JPEG).
+Returns the player's cropped face image (JPEG, 300×300).
 
+**Request**
 ```
 GET /faces/1
 → image/jpeg
 ```
 
-Use directly as `<img src="http://localhost:8002/faces/1" />`.
+Use directly as an image tag — no auth needed:
+```html
+<img src="http://localhost:8002/faces/1" />
+```
 
 ---
 
@@ -50,6 +62,13 @@ Upload a photo and get the most visually similar WC2026 players.
 | `photo` | file | ✓ | — | JPG/PNG photo |
 | `model` | string | | `clip` | `facenet` \| `clip` \| `insightface` |
 | `top` | int | | `3` | How many matches to return (1–20) |
+
+```bash
+curl -X POST http://localhost:8002/match \
+  -F "photo=@photo.jpg" \
+  -F "model=clip" \
+  -F "top=3"
+```
 
 **Response**
 ```json
@@ -85,11 +104,11 @@ Upload a photo and get the most visually similar WC2026 players.
 The quiz requires exactly **2 HTTP calls**:
 
 ```
-POST /quiz/start  { "role": "Frontend developer" }
-    ↓  returns session_id + all 4 questions tailored to the role
+1. POST /quiz/start   { "role": "Soy desarrollador backend..." }
+        ↓ returns session_id + all 4 questions
 
-POST /quiz/answer  { session_id, answers: ["A", "B", "C", "D"] }
-    ↓  returns final team assignments with player descriptions
+2. POST /quiz/answer  { "session_id": "...", "answers": ["A", "B", "C", "D"] }
+        ↓ returns 6 player assignments with descriptions + outro
 ```
 
 Sessions are in-memory — they reset if the server restarts.
@@ -98,26 +117,30 @@ Sessions are in-memory — they reset if the server restarts.
 
 ## POST `/quiz/start`
 
-Generates all 4 questions tailored to the user's role at Qubika and opens a session.
+Generates all 4 questions tailored to the user's role and opens a session.
 
 **Request** — `application/json`
 ```json
 {
-  "role": "Soy diseñador UX, me encargo de los prototipos y trabajo con el equipo de producto"
+  "role": "Soy desarrollador backend, trabajo con Python y APIs REST"
 }
 ```
 
-`role` — texto libre en lenguaje natural describiendo qué hace la persona en Qubika (e.g. "Soy desarrollador backend", "Trabajo como tech lead en el equipo de pagos", "Soy QA y testeo la app mobile").
+`role` — free text describing what the person does at Qubika. Examples:
+- `"Soy desarrollador frontend, trabajo con React"`
+- `"Trabajo como tech lead en el equipo de pagos"`
+- `"Soy QA y testeo la app mobile"`
+- `"Soy diseñadora UX, me encargo de los prototipos"`
 
 **Response**
 ```json
 {
-  "session_id": "7165dbaf-3a2c-4f1e-b9d0-2e8a1c3d5f7b",
+  "session_id": "89609457-654a-495e-98c5-42bccfcdef98",
   "questions": [
-    "🚨 Bug crítico en producción...\nA) ...\nB) ...\nC) ...\nD) ...",
-    "📅 Sprint planning y el PM pide todo para ayer...\nA) ...",
-    "🔍 Code review de un PR enorme...\nA) ...",
-    "⏰ Deploy el viernes a las 17:00...\nA) ..."
+    "Te despertás y te das cuenta que el sistema está caído. ¿Qué hacés? 🤯\nA) ...\nB) ...\nC) ...\nD) ...",
+    "Es hora del standup y el PM se pone a hablar de su gato. ¿Cómo reaccionás? 🐱\nA) ...",
+    "Tenés que hacer una review de código y te encontrás con un PR de 500 líneas. ¿Qué hacés? 📋\nA) ...",
+    "La fecha de entrega se acerca y faltan 10 features por hacer. ¿Cómo manejás la presión? ⏰\nA) ..."
   ],
   "total_questions": 4
 }
@@ -134,45 +157,116 @@ Submits all 4 answers at once and returns the final team.
 **Request** — `application/json`
 ```json
 {
-  "session_id": "7165dbaf-...",
-  "answers": ["A", "C", "B", "D"]
+  "session_id": "89609457-654a-495e-98c5-42bccfcdef98",
+  "answers": ["A", "B", "C", "D"]
 }
 ```
 
-`answers` must have exactly 4 elements (one per question, in order).
+`answers` must have exactly 4 elements (one per question, in order). Values are the letter chosen (`"A"`, `"B"`, `"C"`, or `"D"`).
 
 **Response**
 ```json
 {
   "status": "complete",
-  "session_id": "7165dbaf-...",
-  "outro": "Con este perfil en el laburo...",
+  "session_id": "89609457-654a-495e-98c5-42bccfcdef98",
+  "outro": "Con este equipo, tu ansiedad se transforma en risas y resiliencia. Son los cracks que, como buen desarrollador, saben que el humor y la meticulosidad son clave para hacer de cada partido en la oficina una victoria.",
   "assignments": [
     {
       "title": "El jugador con el que tomarías una birra 🍺",
-      "description": "Trossard es el tipo que se queda hasta las 2am debuggeando y después invita las birras. Experiencia de sobra y siempre con buena onda.",
+      "description": "Harry Kane es el compañero ideal para tomarte una birra; después de un partido, siempre tiene una anécdota para alegrar el día, y seguro sabés que nunca va a esquivar la pregunta sobre el último deployment.",
       "player": {
-        "id": 412,
-        "name": "Leandro Trossard",
-        "team": "Belgium",
-        "face_path": "faces/belgium/leandro_trossard.jpg",
+        "id": 398,
+        "name": "Harry Kane",
+        "team": "England",
+        "face_path": "faces/england/harry_kane.jpg",
         "position": "FW",
-        "dob": "04/12/1994",
-        "club": "Arsenal FC (ENG)",
-        "height_cm": 173,
-        "caps": 52,
-        "goals": 16
+        "dob": "28/07/1993",
+        "club": "FC Bayern München (GER)",
+        "height_cm": 190,
+        "caps": 115,
+        "goals": 81
       }
     },
     {
       "title": "El jugador con el que resolverías tu peor sprint 💻",
-      "description": "...",
-      "player": { "id": 87, "name": "...", ... }
+      "description": "Konrad Laimer es el maestro en resolver desastres en la cancha, así que, cuando el código se pone complicado, sabe cómo hacer un sprint hasta la solución sin perder la cabeza.",
+      "player": {
+        "id": 87,
+        "name": "Konrad Laimer",
+        "team": "Austria",
+        "face_path": "faces/austria/konrad_laimer.jpg",
+        "position": "MF",
+        "dob": "27/05/1997",
+        "club": "FC Bayern München (GER)",
+        "height_cm": 180,
+        "caps": 58,
+        "goals": 7
+      }
     },
-    { "title": "El jugador que deployaría en viernes 🔥", "description": "...", "player": { ... } },
-    { "title": "El jugador que haría el standup más largo 🎙️", "description": "...", "player": { ... } },
-    { "title": "El jugador que nunca escribe tests 😅", "description": "...", "player": { ... } },
-    { "title": "El jugador con el que harías pair programming 🧑‍💻", "description": "...", "player": { ... } }
+    {
+      "title": "El jugador que deployaría en viernes 🔥",
+      "description": "Christopher Bonsu Baah es el que lleva toda la emoción del viernes: viene a la oficina dispuesto a desplegar todo con la misma alegría que un gol en el último minuto, pero, ojo, que no te dé un vuelco el servidor.",
+      "player": {
+        "id": 475,
+        "name": "Christopher Bonsu Baah",
+        "team": "Ghana",
+        "face_path": "faces/ghana/christopher_bonsu_baah.jpg",
+        "position": "FW",
+        "dob": "14/12/2004",
+        "club": "Al Qadsiah FC (KSA)",
+        "height_cm": 172,
+        "caps": 9,
+        "goals": 0
+      }
+    },
+    {
+      "title": "El jugador que haría el standup más largo 🎙️",
+      "description": "Alberto Quintero tiene la chispa necesaria para hacer el standup más largo; siempre tiene una historia que contar y, si hay que explicar por qué el código no compila, agarra el micrófono y te lo narra como si fuera un partido épico.",
+      "player": {
+        "id": 777,
+        "name": "Alberto Quintero",
+        "team": "Panama",
+        "face_path": "faces/panama/alberto_quintero.jpg",
+        "position": "MF",
+        "dob": "18/12/1987",
+        "club": "CD Plaza Amador (PAN)",
+        "height_cm": 165,
+        "caps": 141,
+        "goals": 7
+      }
+    },
+    {
+      "title": "El jugador que nunca escribe tests 😅",
+      "description": "Ali Alhamadi es el típico que tira el código en producción y se va a tomar un café sin dejar un test; en la oficina, siempre hay un sprint que le queda grande, pero el humor se mantiene, al menos hasta que rompa el sistema.",
+      "player": {
+        "id": 548,
+        "name": "Ali Alhamadi",
+        "team": "Iraq",
+        "face_path": "faces/iraq/ali_alhamadi.jpg",
+        "position": "FW",
+        "dob": "01/03/2002",
+        "club": "Luton Town FC (ENG)",
+        "height_cm": 187,
+        "caps": 21,
+        "goals": 5
+      }
+    },
+    {
+      "title": "El jugador con el que harías pair programming 🧑‍💻",
+      "description": "Kieran Tierney es el compañero perfecto para pair programming: sólido en defensa y con una visión clara, sabe cómo mantener la calidad del código y que no te pase como en un partido donde todos van a la carga y nadie defiende.",
+      "player": {
+        "id": 921,
+        "name": "Kieran Tierney",
+        "team": "Scotland",
+        "face_path": "faces/scotland/kieran_tierney.jpg",
+        "position": "DF",
+        "dob": "05/06/1997",
+        "club": "Celtic FC (SCO)",
+        "height_cm": 180,
+        "caps": 56,
+        "goals": 2
+      }
+    }
   ]
 }
 ```
@@ -185,6 +279,7 @@ Submits all 4 answers at once and returns the final team.
 
 ## Notes
 
-- **Face match model:** `clip` gives the most intuitive "lookalike" results. `facenet` and `insightface` are identity-focused and tend to cluster scores around 0.5 for different people.
-- **Quiz questions** are dynamically generated by GPT-4o-mini each session — no two sessions have the same questions.
-- **Player face images** can be loaded directly via `/faces/{id}` — CORS is open (`*`).
+- **Face image URL:** build it as `{VITE_GENAI_URL}/faces/{player.id}` — serves JPEG directly, works as `<img src>`.
+- **Quiz questions** are dynamically generated by GPT-4o-mini each session — no two sessions are the same.
+- **CORS** is fully open — call from any origin without a proxy.
+- **Sessions** are in-memory — if the server restarts mid-quiz, `/quiz/answer` returns `404`. Handle by re-starting the quiz.
