@@ -82,19 +82,14 @@ Upload a photo and get the most visually similar WC2026 players.
 
 ## Quiz — Flow
 
-The quiz is stateful and requires **5 HTTP calls** in sequence:
+The quiz requires exactly **2 HTTP calls**:
 
 ```
 POST /quiz/start
-    ↓  returns session_id + question #1
-POST /quiz/answer  { session_id, answer }
-    ↓  returns question #2
-POST /quiz/answer  { session_id, answer }
-    ↓  returns question #3
-POST /quiz/answer  { session_id, answer }
-    ↓  returns question #4
-POST /quiz/answer  { session_id, answer }
-    ↓  returns final assignments
+    ↓  returns session_id + all 4 questions at once
+
+POST /quiz/answer  { session_id, answers: ["A", "B", "C", "D"] }
+    ↓  returns final team assignments with player descriptions
 ```
 
 Sessions are in-memory — they reset if the server restarts.
@@ -103,49 +98,43 @@ Sessions are in-memory — they reset if the server restarts.
 
 ## POST `/quiz/start`
 
-Starts a new session and returns the first question.
+Generates all 4 questions at once and opens a session.
 
 **Request** — no body required.
 
 **Response**
 ```json
 {
-  "status": "question",
   "session_id": "7165dbaf-3a2c-4f1e-b9d0-2e8a1c3d5f7b",
-  "question": "🚨 Bug crítico en producción...\nA) ...\nB) ...\nC) ...\nD) ...",
-  "question_number": 0,
+  "questions": [
+    "🚨 Bug crítico en producción...\nA) ...\nB) ...\nC) ...\nD) ...",
+    "📅 Sprint planning y el PM pide todo para ayer...\nA) ...",
+    "🔍 Code review de un PR enorme...\nA) ...",
+    "⏰ Deploy el viernes a las 17:00...\nA) ..."
+  ],
   "total_questions": 4
 }
 ```
 
-Save `session_id` — it's required for every subsequent call.
+Save `session_id` — required for the next call.
 
 ---
 
 ## POST `/quiz/answer`
 
-Submits an answer and returns the next question or the final result.
+Submits all 4 answers at once and returns the final team.
 
 **Request** — `application/json`
 ```json
 {
   "session_id": "7165dbaf-...",
-  "answer": "B"
+  "answers": ["A", "C", "B", "D"]
 }
 ```
 
-**Response while questions remain** — same shape as `/quiz/start`:
-```json
-{
-  "status": "question",
-  "session_id": "7165dbaf-...",
-  "question": "...",
-  "question_number": 1,
-  "total_questions": 4
-}
-```
+`answers` must have exactly 4 elements (one per question, in order).
 
-**Response on 4th answer** — `status` changes to `"complete"`:
+**Response**
 ```json
 {
   "status": "complete",
@@ -154,57 +143,36 @@ Submits an answer and returns the next question or the final result.
   "assignments": [
     {
       "title": "El jugador con el que tomarías una birra 🍺",
+      "description": "Trossard es el tipo que se queda hasta las 2am debuggeando y después invita las birras. Experiencia de sobra y siempre con buena onda.",
       "player": {
+        "id": 412,
         "name": "Leandro Trossard",
         "team": "Belgium",
+        "face_path": "faces/belgium/leandro_trossard.jpg",
         "position": "FW",
+        "dob": "04/12/1994",
         "club": "Arsenal FC (ENG)",
+        "height_cm": 173,
         "caps": 52,
-        "goals": 16,
-        "height_cm": 173
+        "goals": 16
       }
     },
     {
       "title": "El jugador con el que resolverías tu peor sprint 💻",
-      "player": { ... }
+      "description": "...",
+      "player": { "id": 87, "name": "...", ... }
     },
-    {
-      "title": "El jugador que deployaría en viernes 🔥",
-      "player": { ... }
-    },
-    {
-      "title": "El jugador que haría el standup más largo 🎙️",
-      "player": { ... }
-    },
-    {
-      "title": "El jugador que nunca escribe tests 😅",
-      "player": { ... }
-    },
-    {
-      "title": "El jugador con el que harías pair programming 🧑‍💻",
-      "player": { ... }
-    }
+    { "title": "El jugador que deployaría en viernes 🔥", "description": "...", "player": { ... } },
+    { "title": "El jugador que haría el standup más largo 🎙️", "description": "...", "player": { ... } },
+    { "title": "El jugador que nunca escribe tests 😅", "description": "...", "player": { ... } },
+    { "title": "El jugador con el que harías pair programming 🧑‍💻", "description": "...", "player": { ... } }
   ]
 }
 ```
 
 **Errors**
-- `422` — missing `session_id` or `answer`
-- `500` — session not found (expired or server restarted)
-
----
-
-## How to detect quiz completion
-
-Check `response.status`:
-
-```ts
-if (response.status === "complete") {
-  // show assignments
-} else {
-  // show next question
-}
-```
+- `422` — `answers` array doesn't have exactly 4 elements
+- `404` — session not found (expired or server restarted)
 
 ---
 

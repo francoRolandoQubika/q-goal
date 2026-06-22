@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from genai.core.config import API_PORT, DATA_DIR
 from genai.core.db import get_all_embeddings, get_player
 from genai.matching.engine import preprocess_user_photo, get_user_embedding, cosine_similarity, EMBEDDINGS_FILES
-from genai.agent.graph import start_session, submit_answer, is_complete
+from genai.agent.graph import start_quiz_session, process_quiz_answers
 from genai.agent.questions import NUM_QUESTIONS
 
 PORT = API_PORT
@@ -155,27 +155,34 @@ def get_face_image(player_id: int):
 
 # ── Quiz endpoints ─────────────────────────────────────────────────────────────
 
-class QuizQuestion(BaseModel):
-    status:          Literal["question"]
+class QuizStartResponse(BaseModel):
     session_id:      str
-    question:        str
-    question_number: int
+    questions:       list[str]
     total_questions: int
 
 
+class QuizAnswerRequest(BaseModel):
+    session_id: str
+    answers:    list[str]
+
+
 class QuizPlayer(BaseModel):
+    id:        int
     name:      str
     team:      str
+    face_path: str
     position:  str | None = None
+    dob:       str | None = None
     club:      str | None = None
+    height_cm: int | None = None
     caps:      int | None = None
     goals:     int | None = None
-    height_cm: int | None = None
 
 
 class QuizAssignment(BaseModel):
-    title:  str
-    player: QuizPlayer | None
+    title:       str
+    description: str
+    player:      QuizPlayer | None
 
 
 class QuizComplete(BaseModel):
@@ -185,82 +192,63 @@ class QuizComplete(BaseModel):
     outro:       str
 
 
-def _state_to_question(session_id: str, state: dict) -> QuizQuestion:
-    from langchain_core.messages import AIMessage as AI
-    msgs = state.get("messages", [])
-    question_text = state.get("current_question", "")
-    for msg in reversed(msgs):
-        if isinstance(msg, AI):
-            question_text = msg.content
-            break
-    return QuizQuestion(
-        status="question",
-        session_id=session_id,
-        question=question_text,
-        question_number=state.get("q_index", 0),
+@app.post("/quiz/start", response_model=QuizStartResponse)
+async def quiz_start():
+    """Generate all 4 questions at once. Save session_id and send all answers in one call."""
+    try:
+        result = start_quiz_session()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return QuizStartResponse(
+        session_id=result["session_id"],
+        questions=result["questions"],
         total_questions=NUM_QUESTIONS,
     )
 
 
-def _state_to_complete(session_id: str, state: dict) -> QuizComplete:
-    from langchain_core.messages import AIMessage as AI
-    msgs  = state.get("messages", [])
-    outro = next((m.content for m in reversed(msgs) if isinstance(m, AI)), "")
+@app.post("/quiz/answer", response_model=QuizComplete)
+async def quiz_answer(body: QuizAnswerRequest):
+    """
+    Submit all answers at once and receive the final team assignments.
+    Body: { "session_id": "...", "answers": ["A", "B", "C", "D"] }
+    """
+    if len(body.answers) != NUM_QUESTIONS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Expected {NUM_QUESTIONS} answers, got {len(body.answers)}.",
+        )
+    try:
+        result = process_quiz_answers(body.session_id, body.answers)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    raw = state.get("assignments") or []
     assignments = [
         QuizAssignment(
             title=a["title"],
+            description=a["description"],
             player=QuizPlayer(
+                id=a["player"]["id"],
                 name=a["player"]["name"],
                 team=a["player"]["team"].replace("_", " ").title(),
+                face_path=a["player"]["face_path"],
                 position=a["player"].get("position"),
+                dob=a["player"].get("dob"),
                 club=a["player"].get("club"),
+                height_cm=a["player"].get("height_cm"),
                 caps=a["player"].get("caps"),
                 goals=a["player"].get("goals"),
-                height_cm=a["player"].get("height_cm"),
             ) if a["player"] else None,
         )
-        for a in raw
+        for a in result["assignments"]
     ]
     return QuizComplete(
         status="complete",
-        session_id=session_id,
+        session_id=body.session_id,
         assignments=assignments,
-        outro=outro,
+        outro=result["outro"],
     )
-
-
-@app.post("/quiz/start", response_model=QuizQuestion)
-async def quiz_start():
-    """Start a new quiz session. Returns the first dynamically generated question."""
-    session_id = str(uuid.uuid4())
-    try:
-        state = start_session(session_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    return _state_to_question(session_id, state)
-
-
-@app.post("/quiz/answer", response_model=QuizQuestion | QuizComplete)
-async def quiz_answer(body: dict):
-    """
-    Submit an answer to the current question.
-    Body: { "session_id": "...", "answer": "..." }
-    Returns the next question or the final team assignments when done.
-    """
-    session_id: str = body.get("session_id", "")
-    answer:     str = body.get("answer", "")
-    if not session_id or not answer:
-        raise HTTPException(status_code=422, detail="session_id and answer are required")
-    try:
-        state = submit_answer(session_id, answer)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    if is_complete(state):
-        return _state_to_complete(session_id, state)
-    return _state_to_question(session_id, state)
 
 
 def serve():
