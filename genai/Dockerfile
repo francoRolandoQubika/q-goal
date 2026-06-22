@@ -10,7 +10,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install ML + API dependencies (pinned to tested versions)
+# Install ML + API dependencies (pinned to tested versions).
+# NOTE: kept as an explicit list rather than `uv pip install -r pyproject.toml`
+# because the loose `>=` constraints resolve differently under uv and drag in an
+# ancient rembg->numba->llvmlite chain (llvmlite 0.36.0) that has no py3.13/arm64
+# wheel and fails to build. If single-sourcing, switch to `uv sync --frozen` with
+# the committed uv.lock (exact pins), not a fresh `>=` resolve. Keep in sync with
+# genai/pyproject.toml — notably python-multipart, required by the /match route.
 RUN pip install --no-cache-dir \
     "deepface>=0.0.100" \
     "fastapi>=0.137" \
@@ -24,6 +30,7 @@ RUN pip install --no-cache-dir \
     "pdfplumber>=0.11" \
     "pillow>=12" \
     "python-dotenv>=1.0" \
+    "python-multipart>=0.0.32" \
     "rembg>=2.0" \
     "requests>=2.34" \
     "torch>=2.12" \
