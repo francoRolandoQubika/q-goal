@@ -1,0 +1,30 @@
+/* Design source: placeholder — replace with Figma file reference when brand is finalized */
+
+:root {
+  --primary: oklch(0.55 0.2 265);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.65 0.15 220);
+  --secondary-foreground: oklch(0.98 0 0);
+  --tertiary: oklch(0.72 0.18 160);
+  --tertiary-foreground: oklch(0.15 0 0);
+}
+
+.dark {
+  --primary: oklch(0.65 0.2 265);
+  --primary-foreground: oklch(0.10 0 0);
+  --secondary: oklch(0.55 0.15 220);
+  --secondary-foreground: oklch(0.10 0 0);
+  --tertiary: oklch(0.60 0.18 160);
+  --tertiary-foreground: oklch(0.98 0 0);
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--tertiary-foreground);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+}
