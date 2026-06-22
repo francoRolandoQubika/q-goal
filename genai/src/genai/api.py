@@ -155,6 +155,9 @@ def get_face_image(player_id: int):
 
 # ── Quiz endpoints ─────────────────────────────────────────────────────────────
 
+class QuizStartRequest(BaseModel):
+    role: str
+
 class QuizStartResponse(BaseModel):
     session_id:      str
     questions:       list[str]
@@ -193,10 +196,10 @@ class QuizComplete(BaseModel):
 
 
 @app.post("/quiz/start", response_model=QuizStartResponse)
-async def quiz_start():
-    """Generate all 4 questions at once. Save session_id and send all answers in one call."""
+async def quiz_start(body: QuizStartRequest):
+    """Generate all 4 questions tailored to the user's role at Qubika. Save session_id and send all answers in one call."""
     try:
-        result = start_quiz_session()
+        result = start_quiz_session(role=body.role)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return QuizStartResponse(

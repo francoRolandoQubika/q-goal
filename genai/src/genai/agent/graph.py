@@ -45,7 +45,7 @@ def _parse_json(content: str) -> object:
 
 # ── Session: start ────────────────────────────────────────────────────────────
 
-def start_quiz_session() -> dict:
+def start_quiz_session(role: str) -> dict:
     """
     Generate all questions at once (1 LLM call) and store the session.
     Returns { session_id, questions: [str, ...] }.
@@ -58,11 +58,12 @@ def start_quiz_session() -> dict:
     resp = llm.invoke([
         SystemMessage(content=SYSTEM_PROMPT),
         HumanMessage(content=(
+            f"El usuario trabaja en Qubika como: {role}\n\n"
             f"Generá exactamente {NUM_QUESTIONS} preguntas de situaciones de oficina "
-            "para una software factory argentina.\n\n"
+            "para una software factory argentina, adaptadas al rol del usuario.\n\n"
             f"Temas en orden:\n{themes_text}\n\n"
             "Requisitos por pregunta:\n"
-            "- Situación concreta y divertida con contexto tech\n"
+            "- Situación concreta y divertida con contexto tech, relevante para su rol\n"
             "- 4 opciones (A, B, C, D) que reflejen personalidades distintas\n"
             "- Usá emojis\n\n"
             'Devolvé SOLO un JSON array: [{"number": 1, "text": "..."}, ...]'
@@ -77,7 +78,7 @@ def start_quiz_session() -> dict:
         questions = [resp.content]
 
     session_id = str(uuid.uuid4())
-    _sessions[session_id] = {"questions": questions}
+    _sessions[session_id] = {"questions": questions, "role": role}
     return {"session_id": session_id, "questions": questions}
 
 
