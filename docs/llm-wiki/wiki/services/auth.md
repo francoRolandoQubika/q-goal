@@ -4,7 +4,7 @@ summary: >-
   The auth package provides centralized session-based authentication configured
   around Better-Auth 1.6. It manages user identity, sessions, and credentials by
   ...
-last_updated: '2026-06-18T21:06:25.817Z'
+last_updated: '2026-06-21T21:00:00.000Z'
 tags:
   - service
   - typescript
@@ -33,6 +33,8 @@ The auth package follows a **factory + singleton pattern**: `createAuth()` initi
 
 ## Request Lifecycle
 
+**Email/password flow:**
+
 1. User submits email and password via sign-in form (client-side validation with Zod)
 2. Web app calls `authClient.signIn.email()`, sending POST to `/api/auth/sign-in`
 3. Server routes request to `auth.handler` (Better-Auth middleware)
@@ -41,6 +43,15 @@ The auth package follows a **factory + singleton pattern**: `createAuth()` initi
 6. On success, inserts new session record into the database with expiry timestamp
 7. Sets HTTP-only, secure, SameSite=none session cookie in response headers
 8. Browser receives cookie; web app navigates to `/dashboard` on success or displays error toast
+
+**Google OAuth flow:**
+
+1. User clicks "Sign in with Google"; web app calls `authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" })`
+2. Better-Auth redirects the browser to Google's OAuth consent page
+3. After consent, Google redirects to `/api/auth/callback/google` (auto-registered by Better-Auth under the existing `/api/auth/*` Hono handler — no custom route needed)
+4. Better-Auth exchanges the authorization code for tokens, creates or looks up the user record, and links the Google identity to the `account` table row
+5. If a user with the same email already exists (email/password account), Better-Auth links the Google account to the existing user (no duplicate user created)
+6. Session cookie is set; browser is redirected to `callbackURL` (`/dashboard`)
 
 ## Data Layer
 
@@ -61,6 +72,10 @@ Schema is not manually written; the Drizzle adapter generates and applies it aut
 | `BETTER_AUTH_URL` | Base URL of the auth service (e.g., `http://localhost:3000`) |
 | `CORS_ORIGIN` | Trusted origin for cross-origin cookie sharing (e.g., `http://localhost:3001`) |
 | `DATABASE_URL` | PostgreSQL connection string (inherited from [[db]]) |
+| `GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID from Google Cloud Console (required for Google sign-in) |
+| `GOOGLE_CLIENT_SECRET` | OAuth 2.0 Client Secret from Google Cloud Console (required for Google sign-in) |
+
+Register `${BETTER_AUTH_URL}/api/auth/callback/google` as an authorized redirect URI in Google Cloud Console. Both variables are validated at startup via `@t3-oss/env-core`; a missing or empty value causes an immediate server startup failure.
 
 ## Integrations
 
@@ -75,7 +90,9 @@ Schema is not manually written; the Drizzle adapter generates and applies it aut
 ## Service-Specific Patterns
 
 - **Factory + singleton:** `createAuth()` builds a configured instance; module exports a pre-instantiated `auth` singleton to avoid repeated initialization and allow module-level reuse.
+- **`socialProviders` is a top-level key:** Google OAuth (and any future social providers) is configured as `socialProviders: { google: { clientId, clientSecret } }` at the top level of `betterAuth({})`, NOT inside `plugins: []`. Better-Auth automatically registers the callback routes under `/api/auth/callback/<provider>`.
 - **Drizzle adapter:** All database operations (user lookups, session creation, token validation) are delegated to the adapter, which translates them into parameterized SQL without exposing raw queries.
 - **Environment-driven setup:** Secrets, URLs, and origins are loaded at module initialization; configuration is immutable after instantiation.
-- **HTTP-only cookies with CORS:** Sessions are stored server-side in the database; cookies are secure, HTTP-only, and SameSite=none to support cross-origin requests between web (port 3001) and server (port 3000). No manual JWT handling required.
+- **HTTP-only cookies with CORS:** Sessions are stored server-side in the database; cookies are secure, HTTP-only, and SameSite=none to support cross-origin requests between web (port 3001) and server (port 3000). No manual JWT handling required. This cross-origin cookie config is **required for OAuth** — without `sameSite: "none"` + `secure: true`, the session cookie is silently dropped after the OAuth redirect.
+- **Account linking:** When a Google user's email matches an existing email/password account, Better-Auth links the OAuth identity to the existing `account` table row — no duplicate user is created.
 - **Stale session behavior:** Modifying a user's role or permissions in the database does not take effect until the user logs out and back in; the active session caches the old user state until explicitly invalidated.
