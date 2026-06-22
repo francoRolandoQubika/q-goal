@@ -29,7 +29,7 @@ from genai.core.config import DATA_DIR, STATS_PDF as DEFAULT_STATS_PDF
 PYTHON = sys.executable
 
 ALL_STEPS  = ["scrape", "crop", "embed", "db", "enrich"]
-ALL_MODELS = ["facenet", "clip", "insightface"]
+ALL_MODELS = ["facenet", "clip"]
 
 DEFAULT_PDF = Path(DEFAULT_STATS_PDF) if DEFAULT_STATS_PDF else None
 
@@ -79,10 +79,15 @@ def db_is_enriched() -> bool:
     if not db_exists():
         return False
     conn = sqlite3.connect(str(DATA_DIR / "players.db"))
-    count = conn.execute(
-        "SELECT COUNT(*) FROM players WHERE position IS NOT NULL"
-    ).fetchone()[0]
-    conn.close()
+    try:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM players WHERE position IS NOT NULL"
+        ).fetchone()[0]
+    except sqlite3.OperationalError:
+        # position column doesn't exist yet — enrich hasn't run
+        count = 0
+    finally:
+        conn.close()
     return count > 0
 
 

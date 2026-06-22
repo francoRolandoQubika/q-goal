@@ -5,6 +5,7 @@ Output: {DATA_DIR}/players/{team_slug}/{player_name}.jpg
 """
 import json
 import time
+import unicodedata
 import requests
 from pathlib import Path
 
@@ -32,6 +33,9 @@ OUTPUT_DIR = DATA_DIR / "players"
 
 
 def slugify(name: str) -> str:
+    # Strip accent marks so DeepFace never sees non-ASCII path components
+    name = unicodedata.normalize("NFD", name)
+    name = "".join(c for c in name if unicodedata.category(c) != "Mn")
     return name.lower().replace(" ", "_").replace(".", "").replace("'", "")
 
 
