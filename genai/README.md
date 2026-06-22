@@ -84,7 +84,9 @@ curl -X POST http://localhost:8002/match \
   -F "top=3"
 
 # Quiz
-curl -X POST http://localhost:8002/quiz/start
+curl -X POST http://localhost:8002/quiz/start \
+  -H "Content-Type: application/json" \
+  -d '{"role": "Soy desarrollador frontend, trabajo con React y me encargo de la UI"}'
 curl -X POST http://localhost:8002/quiz/answer \
   -H "Content-Type: application/json" \
   -d '{"session_id": "<id from previous step>", "answer": "B"}'

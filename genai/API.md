@@ -85,8 +85,8 @@ Upload a photo and get the most visually similar WC2026 players.
 The quiz requires exactly **2 HTTP calls**:
 
 ```
-POST /quiz/start
-    ↓  returns session_id + all 4 questions at once
+POST /quiz/start  { "role": "Frontend developer" }
+    ↓  returns session_id + all 4 questions tailored to the role
 
 POST /quiz/answer  { session_id, answers: ["A", "B", "C", "D"] }
     ↓  returns final team assignments with player descriptions
@@ -98,9 +98,16 @@ Sessions are in-memory — they reset if the server restarts.
 
 ## POST `/quiz/start`
 
-Generates all 4 questions at once and opens a session.
+Generates all 4 questions tailored to the user's role at Qubika and opens a session.
 
-**Request** — no body required.
+**Request** — `application/json`
+```json
+{
+  "role": "Soy diseñador UX, me encargo de los prototipos y trabajo con el equipo de producto"
+}
+```
+
+`role` — texto libre en lenguaje natural describiendo qué hace la persona en Qubika (e.g. "Soy desarrollador backend", "Trabajo como tech lead en el equipo de pagos", "Soy QA y testeo la app mobile").
 
 **Response**
 ```json
