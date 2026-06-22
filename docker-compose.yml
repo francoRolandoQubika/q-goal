@@ -66,5 +66,25 @@ services:
       retries: 5
     restart: unless-stopped
 
+  genai:
+    build:
+      context: .
+      dockerfile: genai/Dockerfile
+    init: true
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./genai/players.db:/app/players.db
+      - ./genai/faces:/app/faces:ro
+      - ./genai/embeddings.npy:/app/embeddings.npy:ro
+      - ./genai/embeddings_clip.npy:/app/embeddings_clip.npy:ro
+      - ./genai/embeddings_insightface.npy:/app/embeddings_insightface.npy:ro
+    env_file:
+      - path: genai/.env
+        required: false
+    environment:
+      API_PORT: 8002
+    restart: unless-stopped
+
 volumes:
   q-goal_postgres_data:

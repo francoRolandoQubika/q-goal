@@ -63,6 +63,9 @@ venv/
 .pytest_cache/
 .ipynb_checkpoints/
 
+# External repos / large data files
+qubigol/
+genai/statsFifa.pdf
 .claude-temp/
 .codex-temp/
 .claude-backups/
