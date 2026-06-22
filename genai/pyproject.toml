@@ -25,6 +25,7 @@ dependencies = [
     "python-multipart>=0.0.32",
     "rembg>=2.0",
     "requests>=2.34",
+    "tf-keras>=2.21.0",
     "torch>=2.12",
     "torchvision>=0.27",
     "transformers>=5.12",
