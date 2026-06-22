@@ -29,8 +29,8 @@ TEAM_MAP = {
     "Canada": "canada",
     "Colombia": "colombia",
     "Congo Dr": "congo_dr",
-    "Côte D'Ivoire": "cote_d_ivoire",
-    "Cote D'Ivoire": "cote_d_ivoire",
+    "Côte D'Ivoire": "cote_divoire",
+    "Cote D'Ivoire": "cote_divoire",
     "Croatia": "croatia",
     "Curaçao": "curacao",
     "Curacao": "curacao",
@@ -305,7 +305,7 @@ def enrich(pdf_data: dict[str, list[dict]]):
     print(f"\nDone — matched {total_matched}, unmatched {total_unmatched}")
 
 
-if __name__ == "__main__":
+def main():
     conn = sqlite3.connect(DB_FILE)
     existing_cols = {r[1] for r in conn.execute("PRAGMA table_info(players)").fetchall()}
     if "position" in existing_cols:
@@ -319,3 +319,7 @@ if __name__ == "__main__":
     print(f"\nExtracted {total_pdf} players from {len(pdf_data)} teams")
     print("\nEnriching DB...")
     enrich(pdf_data)
+
+
+if __name__ == "__main__":
+    main()
