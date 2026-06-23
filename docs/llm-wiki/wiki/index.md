@@ -3,22 +3,23 @@ document_type: index
 summary: >-
   Summary catalog for the q-goal LLM wiki — one line per page, frontmatter
   inline.
-last_updated: '2026-06-18T21:06:25.817Z'
+last_updated: "2026-06-18T21:06:25.817Z"
 related:
   - ARCHITECTURE.md
   - SERVICES.md
 ---
+
 # q-goal LLM Wiki
 
 Summary catalog of every page in this wiki. Each line carries the page summary, document type, tags, and related pages — frontmatter inline so a single read of `index.md` serves Tier 1 retrieval.
 
 ## Architecture
 
-- [ARCHITECTURE](ARCHITECTURE.md) — *architecture* — **q-goal** is a TypeScript-dominant monorepo structured around two separate workspace systems: **Tags:** architecture, topology, typescript, react, hono.
+- [ARCHITECTURE](ARCHITECTURE.md) — _architecture_ — **q-goal** is a TypeScript-dominant monorepo structured around two separate workspace systems: **Tags:** architecture, topology, typescript, react, hono.
 
 ## Services catalog
 
-- [SERVICES](SERVICES.md) — *services* — Catalog of services detected in this project with links to service docs. **Tags:** services, catalog. **Related:** [[ARCHITECTURE]].
+- [SERVICES](SERVICES.md) — _services_ — Catalog of services detected in this project with links to service docs. **Tags:** services, catalog. **Related:** [[ARCHITECTURE]].
 
 ## Per-service docs
 
