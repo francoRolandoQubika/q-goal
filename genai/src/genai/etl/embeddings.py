@@ -8,6 +8,7 @@ Run once after crop.py. Use --model to choose the encoder.
 """
 import argparse
 import json
+import sys
 import numpy as np
 from pathlib import Path
 
@@ -153,8 +154,8 @@ def main():
             fail += 1
 
     if not embeddings:
-        print("No embeddings generated.")
-        return
+        print("No embeddings generated — check that faces/ is populated.")
+        sys.exit(1)
 
     matrix = np.stack(embeddings)
     np.save(out_file, matrix)

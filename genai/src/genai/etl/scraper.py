@@ -93,7 +93,7 @@ def save_manifest(manifest: list[dict]):
 
 
 def main():
-    OUTPUT_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     teams = fetch_teams()
     manifest = []
     total_ok = 0

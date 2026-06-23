@@ -90,6 +90,8 @@ def main():
         print("No players/ directory found. Run scraper first.")
         return
 
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
     ok = 0
     fail = 0
     updated_manifest = []
