@@ -4,7 +4,7 @@ summary: >-
   The GenAI service is a dedicated FastAPI backend for compute-intensive
   generative AI and face-matching workflows. It runs LangGraph agents for quiz
   generatio...
-last_updated: '2026-06-23T03:08:58.598Z'
+last_updated: '2026-06-23T20:00:00.000Z'
 tags:
   - service
   - python
@@ -63,6 +63,7 @@ FastAPI application with Pydantic BaseModel request/response schemas. Startup ev
 | `OPENAI_API_KEY` | OpenAI API key for ChatOpenAI LLM in quiz generation |
 | `DATABASE_URL` | PostgreSQL connection string for metadata and embeddings |
 | `MODEL_SELECTION` | Default embedding model (clip, facenet, insightface) |
+| `STATS_PDF` | Path to the FIFA player stats PDF used by the pipeline. Defaults to `genai/statsFifa.pdf` (committed to the repo); `uv run genai-pipeline` works without extra flags. |
 
 ## Integrations
 
