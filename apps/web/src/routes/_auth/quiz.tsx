@@ -20,9 +20,19 @@ export const Route = createFileRoute("/_auth/quiz")({
   component: QuizPage,
 });
 
+interface QuizAnswerOption {
+  key: string;
+  text: string;
+}
+
+interface QuizQuestion {
+  question: string;
+  answers: QuizAnswerOption[];
+}
+
 interface StartResponse {
   session_id: string;
-  questions: string[];
+  questions: QuizQuestion[];
   total_questions: number;
 }
 
@@ -40,7 +50,7 @@ type QuizState =
       step: "answering";
       role: string;
       sessionId: string;
-      questions: string[];
+      questions: QuizQuestion[];
       current: number;
       answers: string[];
     }
@@ -49,7 +59,6 @@ type QuizState =
   | { step: "save-failed"; role: string; outro: string; assignments: Assignment[] }
   | { step: "error"; kind: "expired" | "generic"; message: string };
 
-const ANSWER_OPTIONS = ["A", "B", "C", "D"] as const;
 const GENAI_URL = env.VITE_GENAI_URL;
 
 function RoleInputStep({ onSubmit }: { onSubmit: (role: string) => Promise<void> }) {
@@ -126,7 +135,7 @@ function AnsweringStep({
   onAnswer: (letter: string) => void;
 }) {
   const { questions, current } = state;
-  const question = questions[current];
+  const { question, answers } = questions[current];
 
   return (
     <div className="mx-auto w-full max-w-xl mt-10 p-6 space-y-6">
@@ -139,15 +148,16 @@ function AnsweringStep({
 
       <p className="whitespace-pre-wrap text-base leading-relaxed">{question}</p>
 
-      <div className="grid grid-cols-2 gap-3">
-        {ANSWER_OPTIONS.map((letter) => (
+      <div className="flex flex-col gap-3">
+        {answers.map((option) => (
           <Button
-            key={letter}
+            key={option.key}
             variant="outline"
-            className="h-12 text-base font-medium"
-            onClick={() => onAnswer(letter)}
+            className="h-auto w-full justify-start whitespace-normal py-3 px-4 text-left text-base font-medium"
+            onClick={() => onAnswer(option.key)}
           >
-            {letter}
+            <span className="font-bold shrink-0 mr-2">{option.key}.</span>
+            <span>{option.text}</span>
           </Button>
         ))}
       </div>
