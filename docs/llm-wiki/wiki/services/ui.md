@@ -1,64 +1,70 @@
 ---
 document_type: service
 summary: >-
-  `@q-goal/ui` is a shared React component library that provides the design
-  system and reusable UI components for the web frontend. It exports
-  shadcn/ui-based ...
-last_updated: '2026-06-18T21:06:25.817Z'
+  The **ui** package is a shared React component library providing reusable,
+  accessible UI components built on Base UI primitives and Tailwind CSS. It is
+  consu...
+last_updated: '2026-06-23T03:08:58.598Z'
 tags:
   - service
   - typescript
   - library
+  - react
+  - base-ui
 service_id: ui
 ---
-# UI Library
+# UI Component Library
 
 ## Purpose
 
-`@q-goal/ui` is a shared React component library that provides the design system and reusable UI components for the web frontend. It exports shadcn/ui-based primitives, Base UI components, icon wrappers (lucide-react), and utility functions for Tailwind CSS styling. The library ensures a single source of truth for visual consistency across [[web]].
+The **ui** package is a shared React component library providing reusable, accessible UI components built on Base UI primitives and Tailwind CSS. It is consumed by [[web]] and other client applications throughout the monorepo, ensuring visual consistency and reducing duplication.
 
 ## Public API / Surface
 
-- **Components**: React primitives built on shadcn/ui and Radix UI (Button, Form components, and others); stored in `src/components/{name}.tsx`
-- **Utilities**: `cn()` — class variance authority function for conditional Tailwind CSS class merging; utility helpers in `src/lib/utils.ts`
-- **Icons**: Re-exported lucide-react icons for consistent iconography
-- **Custom hooks**: (not determined by analysis)
-
-All exports are consumed via `@q-goal/ui` barrel imports in [[web]] and other workspace packages.
+The library exports React components from `src/components/` (e.g., Button) and utility functions from `src/lib/utils.ts` (e.g., `cn` for className composition). Components are built with the CVA (Class Variance Authority) pattern for type-safe variant selection and compose Base UI unstyled primitives.
 
 ## Internal Architecture
 
-The library is organized into two tiers:
+The library follows a component-driven structure:
 
-1. **Component layer** (`src/components/`) — Copy-paste React components based on shadcn/ui, built on Base UI / Radix UI primitives, styled with Tailwind CSS
-2. **Utility layer** (`src/lib/utils.ts`) — Helper functions (especially the `cn()` class-merge utility) and custom hooks
+- **components/** — Reusable React components wrapping Base UI unstyled primitives. Each component is styled via Tailwind CSS and uses CVA for variant management.
+- **lib/utils.ts** — Utility functions for common tasks (e.g., `cn` for merging Tailwind classes with clsx and tailwind-merge).
 
-Styling is purely className-based via Tailwind CSS (no CSS-in-JS runtime). The `cn()` utility is a frequent dependency point (high bridge coupling score: 0.00109), indicating it is central to conditional styling across the application.
+Components apply variant logic via CVA and render Base UI nodes to the DOM. Styling is scoped via Tailwind's `data-slot` attribute targeting and arbitrary CSS modifiers.
 
 ## Request Lifecycle
 
-(Not applicable — this is a library package, not a service with request handlers.)
+Not applicable—ui is a component library with no request/response cycle. Components are imported by consuming applications and rendered in JSX.
 
 ## Data Layer
 
-(Not applicable — UI library does not own persistent data.)
+(no data layer)
 
 ## Configuration
 
-(No environment variables consumed.)
+(no environment variables consumed)
 
 ## Integrations
 
-- **[[web]]** — Primary consumer via `@q-goal/ui` imports
-- **React 19** — Peer dependency; all components are functional React components
-- **Tailwind CSS** — Single source of styling; processed at build time
-- **@base-ui/react** — Headless component primitives (Radix UI compatible)
-- **lucide-react** — Icon library, re-exported for consistent usage
+**External Dependencies:**
+- React 19.2.6
+- Base UI 1.0.0 (headless component primitives)
+- lucide-react (icon library)
+- next-themes (theme switching support)
+- TailwindCSS v4
+- Class Variance Authority (CVA)
+- clsx + tailwind-merge (className utilities)
+
+**Consumed By:**
+- [[web]] (React SPA frontend)
+- External projects via npm workspaces (@q-goal/ui)
 
 ## Service-Specific Patterns
 
-**shadcn/ui copy-paste model**: Components are not published as independent npm modules but copied and customized within the library. This allows the team to own implementation details without external release dependencies.
+**CVA (Class Variance Authority):** Components use CVA to define type-safe, composable variant combinations. Each component exposes a `variants` object mapping variant names (e.g., `variant`, `size`) to Tailwind class strings, enabling consumers to select styles declaratively.
 
-**Class merging via `cn()`**: Conditional Tailwind CSS class composition through a utility function; widely used across component variants and conditional styling.
+**Base UI Wrapping:** All components wrap unstyled Base UI primitives (e.g., ButtonPrimitive), delegating accessibility and DOM semantics to Base UI while applying Tailwind styling on top.
 
-**Component-first API**: All public exports are React components or styling utilities; no data models, services, or business logic resides in this package.
+**TailwindCSS v4 Arbitrary Modifiers:** The library leverages Tailwind v4 arbitrary modifiers (e.g., `[a]:hover:`, `[&_svg]:`) for context-dependent styling within components without additional CSS.
+
+**data-slot Attributes:** Components use `data-slot` attributes (e.g., `data-slot='button'`) as semantic selectors, replacing fragile class-name-based targeting.

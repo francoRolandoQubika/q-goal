@@ -1,114 +1,116 @@
 ---
 name: testing-conventions
-description: Testing conventions, strategies, and framework recommendations (testing framework not yet adopted)
+description: Project-specific testing patterns, what NOT to mock, and integration test rules
 disable-model-invocation: false
 version: 1.0
 ---
 
 # Testing Conventions
 
-## Testing Status
-
-**No testing framework is currently configured across any service (web, server, auth, db, ui, etl, genai).** When testing is adopted, follow the recommendations below.
-
-## Recommended Test Frameworks
-
-- **TypeScript services** (web, server, auth, db, ui): **Vitest** — fast, ESM-native, great TypeScript support, Vite integration
-- **Python services** (etl, genai): **pytest** — standard, fixtures, parametrization, excellent CLI
-
 ## Testing Philosophy
 
-When tests are written, follow these principles:
+Test the contract, not the implementation. For API endpoints, test request → response. For data layer, test database state. For UI, test user interactions and rendered output.
 
-- **Test behavior, not implementation.** A test for "POST /users returns 201" is better than "createUser calls db.insert"
-- **Test boundaries, not internals.** Test route handlers and service APIs; skip testing private helpers that are covered by their public callers
-- **Integration > unit for critical paths.** For auth, DB, and payment flows, a real database in tests beats mocks — see "What NOT to Mock"
-- **Mock external services.** 3rd-party APIs (OpenAI, Stripe, email vendors) should always be mocked to avoid flaky tests and avoid charges
+Avoid testing implementation details (e.g., function call counts, middleware execution order). Test behavior that matters to consumers.
 
 ## Unit Test Patterns
 
-When implemented, unit tests should follow this pattern:
+Unit tests verify single functions or methods in isolation.
 
 ```typescript
-// apps/server/src/routes/posts.test.ts
-import { describe, it, expect } from "vitest";
-import { createPostSchema } from "./posts";
+// Example: Zod schema validation
+import { z } from 'zod';
+import { describe, it, expect } from 'bun:test';
 
-describe("POST /posts", () => {
-  it("validates request body", () => {
-    const valid = { title: "My Post", content: "Hello" };
-    const result = createPostSchema.safeParse(valid);
+const userSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1),
+});
+
+describe('userSchema', () => {
+  it('accepts valid user data', () => {
+    const result = userSchema.safeParse({
+      email: 'user@example.com',
+      name: 'Alice',
+    });
     expect(result.success).toBe(true);
   });
 
-  it("rejects missing title", () => {
-    const invalid = { content: "Hello" };
-    const result = createPostSchema.safeParse(invalid);
+  it('rejects invalid email', () => {
+    const result = userSchema.safeParse({
+      email: 'not-an-email',
+      name: 'Alice',
+    });
     expect(result.success).toBe(false);
   });
 });
 ```
 
+Keep unit tests fast and isolated. Mock external dependencies (HTTP calls, timers) but use real Zod schemas and utility functions.
+
 ## Integration Test Patterns
 
-For route handlers and services, use integration tests with a real (test) database:
+Integration tests verify multiple components working together: endpoint handlers with database reads/writes, service layers with Drizzle ORM.
 
 ```typescript
-// apps/server/src/routes/posts.integration.test.ts
-import { describe, it, expect, beforeEach } from "vitest";
-import { db } from "@q-goal/db";
-import { testClient } from "hono/testing";
-import app from "../index";
+// Example: Hono endpoint with database
+import { describe, it, expect, afterEach } from 'bun:test';
+import { app } from '../src/index';
 
-describe("POST /posts (integration)", () => {
-  beforeEach(async () => {
-    // Seed or reset database state
-    await db.delete(posts);
+describe('POST /items', () => {
+  afterEach(async () => {
+    // Clean up test data
+    await db.delete(items);
   });
 
-  it("creates a post", async () => {
-    const res = await testClient(app).post("/posts").json({
-      title: "Test",
-      content: "Content",
+  it('creates and returns item', async () => {
+    const response = await app.request('/items', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Test Item' }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(res.status).toBe(201);
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json).toHaveProperty('id');
+    expect(json.title).toBe('Test Item');
   });
 });
 ```
 
+Always hit a real (test) database, not a mock. Prior incident: mocked tests passed but production migrations failed. See [[postgres-port-5433]].
+
 ## What NOT to Mock
 
-- **Database queries:** Use a test database (e.g., an in-memory or ephemeral Postgres instance). Mocking ORM calls masks real schema mismatches and migration bugs.
-- **Better-Auth session logic:** Test with real sessions; mocking the session API gives false confidence
-- **Drizzle transactions:** Test transaction rollback and atomicity with real transactions
+**Do not mock the database.** Use a real test database (pg, sqlite, or in-memory). Mocking Drizzle relationships or queries masks migration issues and schema bugs.
 
-Mock ONLY:
-- External APIs (OpenAI, payment processors, email vendors)
-- Time-based behavior (use `vitest.useFakeTimers()`)
-- File I/O and network calls to non-test infrastructure
+**Do not mock Zod validators.** Schema validation must be tested against real Zod instances to catch parsing bugs.
 
-## Fixture Conventions (When Adopted)
+**Do not mock HTTP clients to external services (Google AI, OpenAI) unless testing offline error paths.** Instead, mock at the network boundary (intercept fetch/axios) so the actual API contract code is tested.
 
-- Create a `tests/fixtures/` directory at the project root or per-service
-- Use a builder pattern for complex objects:
+## Fixture Conventions
+
+Create reusable test data factories for complex objects.
 
 ```typescript
-// tests/fixtures/users.ts
-export function createUser(overrides = {}) {
+// Example: User factory
+function createUser(overrides = {}) {
   return {
-    id: Math.random(),
-    email: "test@example.com",
-    name: "Test User",
+    id: '1',
+    email: 'test@example.com',
+    name: 'Test User',
+    role: 'user' as const,
     ...overrides,
   };
 }
+
+// Usage
+const admin = createUser({ role: 'admin' });
 ```
 
-- Seed the database in `beforeEach()` hooks, not in fixture files
+Store fixtures in a `__fixtures__/` directory or inline in the test file if simple. Name factories as `create{Entity}()`.
 
-## Coverage Expectations (When Framework Adopted)
+## Coverage Expectations
 
-- **Minimum 60% line coverage** for server, auth, db packages (business logic)
-- **Minimum 40% for web** (UI tests are flaky; focus on critical paths and hooks)
-- **Minimum 70% for Python services** (data pipelines and AI logic are critical)
-- **Do NOT enforce 100% coverage.** Focus on covering error paths and side effects, not trivial getters
+Aim for > 70% statement coverage on critical paths (API handlers, service layer, data layer). Do not chase 100% coverage — some code paths are unreachable or not worth testing (e.g., error fallbacks on fatal crashes).
+
+Test the golden path (happy case) and 2–3 error cases per endpoint. One untested error case per function is acceptable; five is negligence.

@@ -1,85 +1,62 @@
 ---
 document_type: service
 summary: >-
-  The etl service is a Python CLI for data pipeline operations within the q-goal
-  monorepo. It is designed to read from PostgreSQL tables, perform
-  transformatio...
-last_updated: '2026-06-18T21:06:25.817Z'
+  The ETL service is a Python CLI that orchestrates the bulk ingestion and
+  processing of images for the World Cup 2026 face-matching pipeline. It invokes
+  the g...
+last_updated: '2026-06-23T03:08:58.598Z'
 tags:
   - service
   - python
   - cli
 service_id: etl
 ---
-# ETL Service
+# ETL
 
 ## Purpose
 
-The etl service is a Python CLI for data pipeline operations within the q-goal monorepo. It is designed to read from PostgreSQL tables, perform transformations, and post results back to the Hono server for persistence. The service runs independently on schedules or can be triggered by server webhooks.
+The ETL service is a Python CLI that orchestrates the bulk ingestion and processing of images for the World Cup 2026 face-matching pipeline. It invokes the genai pipeline module to coordinate face detection, embedding computation, and metadata persistence in PostgreSQL. The service is designed as a one-shot or scheduled job runner that transforms raw image inputs into queryable face embeddings.
 
 ## Public API / Surface
 
-**CLI entry point:**
-- `uv run etl` — Executes the ETL pipeline
+- `uv run etl` — Entry point for the CLI (currently a placeholder)
+- `uv run genai-pipeline` — Primary command to execute the WC2026 face-matching ETL pipeline
 
-**Current behavior:** The service prints "Hello from etl!" on invocation.
-
-**Interface:** Command-line only; no HTTP endpoints or library exports.
+The CLI is thin; actual pipeline logic resides in [[genai]]'s `src/genai/pipeline.py` module.
 
 ## Internal Architecture
 
-The etl service is a minimal Python package managed by the uv workspace system (separate from the Bun npm workspace). The service entry point is located at `etl/src/etl/__init__.py`.
+The etl package is a minimal Python CLI wrapper with a single entry point (`src/etl/__init__.py`). It delegates all processing to the [[genai]] service. The architecture favors simplicity: etl serves as the orchestration layer and job scheduler, while heavy lifting (face detection, embeddings) is handled by genai's LangGraph-based pipeline.
 
-**Build & execution:**
-- Manifest: `etl/pyproject.toml`
-- Runtime: Python 3.13
-- Package manager: uv
+## Request Lifecycle (Job Lifecycle)
 
-**Code quality:**
-- Linting & formatting: Ruff (`uv run ruff check --fix` / `uv run ruff format`)
-- Testing framework: (not determined by analysis)
-
-## Request Lifecycle (or Job Lifecycle)
-
-The etl service follows a read-transform-post pipeline:
-
-1. **Initialization** — CLI invoked via `uv run etl`
-2. **Data ingestion** — Reads from PostgreSQL tables via introspection of the [[db]] schema
-3. **Transformation** — Processes raw data according to pipeline logic
-4. **Persistence** — POSTs transformed results back to the [[server]] at a designated endpoint (e.g., `/api/etl/result`)
-5. **Server-side upsert** — The server receives the payload and writes results into PostgreSQL via Drizzle ORM
-6. **Polling** — The [[web]] frontend polls the server's `/status` endpoint to subscribe to changes (WebSocket integration is not yet implemented)
+1. User invokes `uv run genai-pipeline` (via etl or directly)
+2. etl/genai pipeline module loads configuration and connects to PostgreSQL
+3. Image metadata is fetched from database
+4. Face detection runs on each image (deepface/insightface)
+5. Embedding vectors are computed for detected faces
+6. Embeddings and match metadata are persisted to PostgreSQL
+7. Pipeline completes; results become queryable by [[server]]'s `/matches` endpoint
 
 ## Data Layer
 
-**Read access:**
-- PostgreSQL database (port 5433) — introspects schema from [[db]] package
-- Tables: (not determined by analysis)
-
-**Write access:** None directly; results are POSTed to the server, which handles persistence.
+The etl service does not own any data stores. It accesses:
+- **PostgreSQL** (port 5433) — reads image metadata, writes computed embeddings and match results via [[genai]]'s pipeline module
 
 ## Configuration
 
-Environment variables: (not determined by analysis)
+(no environment variables consumed)
 
-Likely candidates (inferred from typical ETL setups):
-- `DATABASE_URL` — PostgreSQL connection string
-- `SERVER_URL` — Hono server base URL for result posting
+Environment configuration (DATABASE_URL, OPENAI_API_KEY, etc.) is inherited from the parent [[genai]] service when the pipeline executes.
 
 ## Integrations
 
-**[[server]]** (outbound)
-- POSTs transformed data to a server endpoint for upsert
-
-**[[db]]** (read-only)
-- Introspects PostgreSQL schema to construct queries
-- Reads from PostgreSQL directly
-
-**PostgreSQL** (database)
-- Direct table reads for source data
+- **[[genai]]** — Face-matching pipeline module invoked as the primary workhorse; etl coordinates its execution
+- **[[db]]** — PostgreSQL schema and connection, accessed via genai's database module
+- **External ML libraries** — deepface, insightface (depended on by genai, not directly by etl)
 
 ## Service-Specific Patterns
 
-- **CLI-as-pipeline:** The entire service is invoked as a command-line tool with no persistent runtime; suitable for scheduled jobs or webhook triggers.
-- **Stateless transformation:** No internal state or caching; each invocation is independent.
-- **Server handoff pattern:** Results are not persisted locally; the service POSTs to the server, delegating storage to the backend.
+**CLI-as-orchestrator**: The etl package is intentionally thin, providing a CLI entry point that launches the actual pipeline logic in genai. This pattern allows future expansion of etl with additional subcommands (for different batch jobs) without duplicating pipeline code.
+
+**Stub implementation**: The current `uv run etl` command is incomplete; the real ETL work happens in genai's pipeline module. This separation allows genai to be tested and invoked independently while etl evolves as a higher-level scheduling and orchestration layer.
