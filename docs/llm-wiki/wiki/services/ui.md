@@ -4,7 +4,7 @@ summary: >-
   The **ui** package is a shared React component library providing reusable,
   accessible UI components built on Base UI primitives and Tailwind CSS. It is
   consu...
-last_updated: '2026-06-23T03:08:58.598Z'
+last_updated: '2026-06-23T22:59:00.000Z'
 tags:
   - service
   - typescript
@@ -21,7 +21,7 @@ The **ui** package is a shared React component library providing reusable, acces
 
 ## Public API / Surface
 
-The library exports React components from `src/components/` (e.g., Button) and utility functions from `src/lib/utils.ts` (e.g., `cn` for className composition). Components are built with the CVA (Class Variance Authority) pattern for type-safe variant selection and compose Base UI unstyled primitives.
+The library exports React components from `src/components/` (e.g., Button, Dialog) and utility functions from `src/lib/utils.ts` (e.g., `cn` for className composition). Components are built with the CVA (Class Variance Authority) pattern for type-safe variant selection and compose Base UI unstyled primitives. `dialog.tsx` exports `Dialog`, `DialogTrigger`, `DialogPortal`, `DialogBackdrop`, `DialogPopup`, `DialogTitle`, `DialogDescription`, `DialogClose`, `DialogFooter`, and a generic `ConfirmDialog` molecule (controlled, with `title`/`description`/`confirmLabel`/`cancelLabel`/`destructive` props).
 
 ## Internal Architecture
 

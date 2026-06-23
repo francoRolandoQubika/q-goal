@@ -4,7 +4,7 @@ summary: >-
   The web service is a React 19 single-page application (SPA) that provides the
   primary user interface for q-goal. It serves as the frontend entry point for
   us...
-last_updated: '2026-06-23T19:57:02.000Z'
+last_updated: '2026-06-23T22:59:00.000Z'
 tags:
   - service
   - typescript
@@ -25,9 +25,8 @@ The web service has no HTTP endpoints of its own; it is a browser-based SPA deli
 | ----- | ------- |
 | `/` | Entry redirector — `beforeLoad` routes to `/login` (no session), `/dashboard` (session + saved result), or `/quiz` (session, no result) |
 | `/login` | Google OAuth sign-in (`callbackURL` → `/`, which then redirects based on session + saved result) |
-| `/ai` | Real-time AI chat interface with streaming responses |
-| `/_auth/quiz` | Auth-protected quiz chat interface (calls genai `/quiz/start` + `/quiz/answer`); `loader` redirects to `/dashboard` if a saved result already exists; on completion persists the result via `POST /api/quiz-result` then navigates to `/dashboard` |
-| `/_auth/dashboard` | Auth-protected results dashboard — `loader` fetches the persisted quiz result from the server (`GET /api/quiz-result`); redirects to `/quiz` if none; renders team-themed player cards from loader data |
+| `/_auth/quiz` | Auth-protected quiz; `loader` returns `{ alreadyCompleted: true }` when a saved result exists; the component renders an "already completed" interstitial ("Go to dashboard" / "Redo quiz") instead of redirecting; on fresh completion persists the result via `POST /api/quiz-result` then navigates to `/dashboard` |
+| `/_auth/dashboard` | Auth-protected results dashboard — `loader` fetches the persisted quiz result from the server (`GET /api/quiz-result`); redirects to `/quiz` if none; renders team-themed player cards from loader data; includes a "Redo quiz" button that opens a confirm dialog then calls `DELETE /api/quiz-result` |
 | Other routes | (determined by route files in `src/routes/`) |
 
 Client-side navigation is handled entirely by TanStack Router; no server-side routing is required. The app exports no programmatic library surface—it is consumed as a built application artifact delivered to browsers.
@@ -36,8 +35,8 @@ Client-side navigation is handled entirely by TanStack Router; no server-side ro
 
 The web app follows a React component tree layered as:
 
-1. **Root route** (`src/routes/__root.tsx`) — wraps all pages with global context providers (theme, auth, router)
-2. **Layout routes** (`src/routes/{group}/route.tsx`) — optional nested layouts for page groups (e.g., `_auth/` for signin/signup)
+1. **Root route** (`src/routes/__root.tsx`) — wraps all pages with global context providers (theme, auth, router); no chrome of its own
+2. **Layout routes** (`src/routes/{group}/route.tsx`) — optional nested layouts; `_auth/route.tsx` mounts `<AppBar />` (brand + ModeToggle + UserMenu) above `<Outlet />` so all authed pages share it
 3. **Page routes** (`src/routes/{name}.tsx`) — leaf routes that render page-level components
 4. **Components** (`src/components/{name}.tsx`) — reusable React components, imported from `packages/ui` (Base UI + Tailwind) and local components
 5. **Libraries** (`src/lib/`) — auth-client and utility functions
@@ -109,6 +108,6 @@ The web app does not directly call external services; all external integrations 
 
 **Shared UI library:** Components import from `packages/ui` (Base UI + Tailwind CVA variants) to ensure visual consistency and reduce duplication across apps.
 
-**Server-persisted quiz result + loader-backed routing:** The completed quiz result (role, outro, assignments) is persisted to the server (`/api/quiz-result`, keyed by user) rather than passed via router location state. `/_auth/quiz` and `/_auth/dashboard` declare a route `loader` that fetches the result with `credentials: "include"`; the dashboard renders from `useLoaderData` and redirects to `/quiz` when none exists, so the result survives refresh/logout. `/` is an entry redirector (`beforeLoad`) that routes to `/login`, `/quiz`, or `/dashboard` based on session + saved result. On save failure the quiz page keeps the generated figurita visible with a retry rather than navigating away.
+**Server-persisted quiz result + loader-backed routing:** The completed quiz result (role, outro, assignments) is persisted to the server (`/api/quiz-result`, keyed by user) rather than passed via router location state. `/_auth/quiz` and `/_auth/dashboard` declare a route `loader` that fetches the result with `credentials: "include"`; the dashboard renders from `useLoaderData` and redirects to `/quiz` when none exists, so the result survives refresh/logout. `/` is an entry redirector (`beforeLoad`) that routes to `/login`, `/quiz`, or `/dashboard` based on session + saved result. On save failure the quiz page keeps the generated figurita visible with a retry rather than navigating away. The redo flow (dashboard button or quiz interstitial) calls `DELETE /api/quiz-result` then `router.invalidate()` to force a fresh loader run.
 
 **Environment isolation:** Each `.env` file is app-scoped; web does not share configuration with server or other packages via environment files.
