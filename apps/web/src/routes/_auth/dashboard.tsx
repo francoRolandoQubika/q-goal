@@ -1,4 +1,5 @@
 import { Button } from "@q-goal/ui/components/button";
+import { toast } from "sonner";
 import { createFileRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { DashboardHeader } from "../../components/dashboard-header";
@@ -80,9 +81,13 @@ function DashboardPage() {
           open={redoOpen}
           onOpenChange={setRedoOpen}
           onConfirm={async () => {
-            await deleteQuizResult();
-            await router.invalidate();
-            navigate({ to: "/quiz" });
+            try {
+              await deleteQuizResult();
+              await router.invalidate();
+              navigate({ to: "/quiz" });
+            } catch {
+              toast.error("Failed to reset quiz. Please try again.");
+            }
           }}
         />
       </div>
