@@ -22,55 +22,55 @@ Packages in `packages/*` are imported as `@q-goal/<name>` — never use relative
 
 ### apps/web (React + TanStack Router)
 
-| File Type | Location Pattern | Example |
-| --------- | ---------------- | ------- |
-| TanStack root route | `src/routes/__root.tsx` | `apps/web/src/routes/__root.tsx` |
-| TanStack page route | `src/routes/{name}.tsx` | `apps/web/src/routes/ai.tsx` |
-| React component | `src/components/{name}.tsx` | `apps/web/src/components/header.tsx` |
-| Auth client lib | `src/lib/auth-client.ts` | `apps/web/src/lib/auth-client.ts` |
+| File Type              | Location Pattern            | Example                               |
+| ---------------------- | --------------------------- | ------------------------------------- |
+| TanStack root route    | `src/routes/__root.tsx`     | `apps/web/src/routes/__root.tsx`      |
+| TanStack page route    | `src/routes/{name}.tsx`     | `apps/web/src/routes/ai.tsx`          |
+| React component        | `src/components/{name}.tsx` | `apps/web/src/components/header.tsx`  |
+| Auth client lib        | `src/lib/auth-client.ts`    | `apps/web/src/lib/auth-client.ts`     |
 | Local type definitions | `src/lib/{domain}-types.ts` | `apps/web/src/lib/dashboard-types.ts` |
-| App entry | `src/main.tsx` | `apps/web/src/main.tsx` |
+| App entry              | `src/main.tsx`              | `apps/web/src/main.tsx`               |
 
 ### apps/server (Hono)
 
-| File Type | Location Pattern | Example |
-| --------- | ---------------- | ------- |
-| Hono server entry | `src/index.ts` | `apps/server/src/index.ts` |
+| File Type         | Location Pattern | Example                    |
+| ----------------- | ---------------- | -------------------------- |
+| Hono server entry | `src/index.ts`   | `apps/server/src/index.ts` |
 
 ### packages/auth (Better-Auth)
 
-| File Type | Location Pattern | Example |
-| --------- | ---------------- | ------- |
-| Auth config entry | `src/index.ts` | `packages/auth/src/index.ts` |
+| File Type         | Location Pattern | Example                      |
+| ----------------- | ---------------- | ---------------------------- |
+| Auth config entry | `src/index.ts`   | `packages/auth/src/index.ts` |
 
 ### packages/db (Drizzle)
 
-| File Type | Location Pattern | Example |
-| --------- | ---------------- | ------- |
+| File Type      | Location Pattern         | Example                          |
+| -------------- | ------------------------ | -------------------------------- |
 | Drizzle schema | `src/schema/{domain}.ts` | `packages/db/src/schema/auth.ts` |
-| Package entry | `src/index.ts` | `packages/db/src/index.ts` |
+| Package entry  | `src/index.ts`           | `packages/db/src/index.ts`       |
 
 ### packages/ui (React components)
 
-| File Type | Location Pattern | Example |
-| --------- | ---------------- | ------- |
-| UI component | `src/components/{name}.tsx` | `packages/ui/src/components/button.tsx` |
-| Utility function | `src/lib/utils.ts` | `packages/ui/src/lib/utils.ts` |
+| File Type        | Location Pattern            | Example                                 |
+| ---------------- | --------------------------- | --------------------------------------- |
+| UI component     | `src/components/{name}.tsx` | `packages/ui/src/components/button.tsx` |
+| Utility function | `src/lib/utils.ts`          | `packages/ui/src/lib/utils.ts`          |
 
 ### genai (FastAPI + LangGraph)
 
-| File Type | Location Pattern | Example |
-| --------- | ---------------- | ------- |
-| FastAPI app entry | `src/genai/api.py` | `genai/src/genai/api.py` |
-| Pipeline entry | `src/genai/pipeline.py` | `genai/src/genai/pipeline.py` |
+| File Type              | Location Pattern              | Example                          |
+| ---------------------- | ----------------------------- | -------------------------------- |
+| FastAPI app entry      | `src/genai/api.py`            | `genai/src/genai/api.py`         |
+| Pipeline entry         | `src/genai/pipeline.py`       | `genai/src/genai/pipeline.py`    |
 | LangGraph agent module | `src/genai/agent/{module}.py` | `genai/src/genai/agent/graph.py` |
-| ETL submodule | `src/genai/etl/{task}.py` | `genai/src/genai/etl/enrich.py` |
-| Core config | `src/genai/core/config.py` | `genai/src/genai/core/config.py` |
+| ETL submodule          | `src/genai/etl/{task}.py`     | `genai/src/genai/etl/enrich.py`  |
+| Core config            | `src/genai/core/config.py`    | `genai/src/genai/core/config.py` |
 
 ### etl (Python CLI)
 
-| File Type | Location Pattern | Example |
-| --------- | ---------------- | ------- |
+| File Type     | Location Pattern      | Example                   |
+| ------------- | --------------------- | ------------------------- |
 | Package entry | `src/etl/__init__.py` | `etl/src/etl/__init__.py` |
 
 ## Directory Structure
@@ -90,38 +90,40 @@ project/
 
 ## Essential Commands
 
-| Command | Description |
-| ------- | ----------- |
-| `bun install` | Install dependencies |
-| `bun run docker:up` | Build and start (web, server, postgres) |
-| `bun run db:start` | Start postgres only (port 5433) |
-| `bun run dev` | Start web + server dev |
-| `bun run check-types` | Type-check all packages |
-| `oxlint && oxfmt --write` | Lint and format (JS/TS) |
-| `uv sync` | Sync Python dependencies |
-| `uv run etl` | Run ETL CLI |
-| `uv run genai-api` | Start FastAPI server (port 8002) |
-| `uv run genai-pipeline` | Run WC2026 face-match ETL pipeline |
-| `uv run ruff check --fix` | Lint and fix Python |
-| `uv run ruff format` | Format Python |
+| Command                   | Description                             |
+| ------------------------- | --------------------------------------- |
+| `bun install`             | Install dependencies                    |
+| `bun run docker:up`       | Build and start (web, server, postgres) |
+| `bun run db:start`        | Start postgres only (port 5433)         |
+| `bun run dev`             | Start web + server dev                  |
+| `bun run check-types`     | Type-check all packages                 |
+| `oxlint && oxfmt --write` | Lint and format (JS/TS)                 |
+| `uv sync`                 | Sync Python dependencies                |
+| `uv run etl`              | Run ETL CLI                             |
+| `uv run genai-api`        | Start FastAPI server (port 8002)        |
+| `uv run genai-pipeline`   | Run WC2026 face-match ETL pipeline      |
+| `uv run ruff check --fix` | Lint and fix Python                     |
+| `uv run ruff format`      | Format Python                           |
 
 ## Services & Ports
 
-| Service | Type | Port | Role |
-| ------- | ---- | ---- | ---- |
-| web | frontend | 3001 | React frontend |
-| server | backend | 3000 | Hono backend |
-| genai | backend | 8002 | FastAPI backend |
-| auth | library | — | Better-Auth library |
-| db | library | — | Drizzle ORM library |
-| ui | library | — | React component library |
-| etl | cli | — | Python ETL CLI |
-| postgres | database | 5433 | PostgreSQL (host port remapped from 5432) |
-| google-generative-ai | llm-service | — (SaaS) | Google Cloud generative AI |
-| openai | llm-service | — (SaaS) | OpenAI API |
+| Service              | Type        | Port     | Role                                      |
+| -------------------- | ----------- | -------- | ----------------------------------------- |
+| web                  | frontend    | 3001     | React frontend                            |
+| server               | backend     | 3000     | Hono backend                              |
+| genai                | backend     | 8002     | FastAPI backend                           |
+| auth                 | library     | —        | Better-Auth library                       |
+| db                   | library     | —        | Drizzle ORM library                       |
+| ui                   | library     | —        | React component library                   |
+| etl                  | cli         | —        | Python ETL CLI                            |
+| postgres             | database    | 5433     | PostgreSQL (host port remapped from 5432) |
+| google-generative-ai | llm-service | — (SaaS) | Google Cloud generative AI                |
+| openai               | llm-service | — (SaaS) | OpenAI API                                |
 
 <!-- LLM_WIKI_START -->
+
 ## LLM Wiki
+
 - Router (entry point): `docs/llm-wiki/CLAUDE.md` — decision table, tier discipline, available graph tools. **Read this first.**
 - Index (summary catalog): `docs/llm-wiki/wiki/index.md` — one line per page; pick the 1–3 pages whose summaries match your question.
 - Graph-backed docs: generated from .code-review-graph/graph.db with wiki-generator synthesis.
@@ -129,7 +131,9 @@ project/
 <!-- LLM_WIKI_END -->
 
 <!-- GRAPH_DISCIPLINE_START -->
+
 ## Graph navigation discipline
 
 Top-down, never breadth-first. Graph MCP tools have strict per-result token caps; unbounded calls overflow silently. The full discipline (lean defaults, drill-in budgets, forbidden tools, spill-protocol HARD-FAILURE semantics) lives in the wiki router at `docs/llm-wiki/CLAUDE.md` (or `AGENTS.md` on Codex). Read it before issuing graph queries; do NOT improvise tool parameters from prior knowledge.
+
 <!-- GRAPH_DISCIPLINE_END -->
