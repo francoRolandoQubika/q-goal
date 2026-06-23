@@ -68,7 +68,7 @@ def embedding_exists(model: str) -> bool:
         "clip":        DATA_DIR / "embeddings_clip.npy",
         "insightface": DATA_DIR / "embeddings_insightface.npy",
     }
-    return files[model].exists()
+    return files[model].is_file()
 
 
 def db_exists() -> bool:

@@ -47,12 +47,12 @@ def load_db():
     _matrices["facenet"] = matrix
     for model_name in ("clip", "insightface"):
         f = EMBEDDINGS_FILES[model_name]
-        if Path(f).exists():
+        if Path(f).is_file():
             m, _ = get_all_embeddings(f)
             _matrices[model_name] = m
             print(f"[api]   + {model_name} loaded")
         else:
-            print(f"[api]   - {model_name} not found (run: python -m genai.pipeline --steps embed --models {model_name})")
+            print(f"[api]   - {model_name} not found (run: uv run genai-pipeline --steps embed --models {model_name})")
     print(f"[api] Ready — {len(_rows)} players indexed, models: {list(_matrices)}")
 
 

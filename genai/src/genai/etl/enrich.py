@@ -6,6 +6,7 @@ The PDF has variable column counts (13-15) per page. We parse the header
 row dynamically to find column indices, then extract data accordingly.
 """
 import re
+import sys
 import sqlite3
 import unicodedata
 import pdfplumber
@@ -306,6 +307,16 @@ def enrich(pdf_data: dict[str, list[dict]]):
 
 
 def main():
+    if not Path(PDF_PATH).is_file():
+        print(f"[enrich] ERROR: stats PDF not found at {PDF_PATH}")
+        print("         Place statsFifa.pdf in genai/ or set STATS_PDF=/path/to/file.pdf")
+        sys.exit(1)
+
+    if not Path(DB_FILE).is_file():
+        print(f"[enrich] ERROR: players.db not found at {DB_FILE}")
+        print("         Run the db step first: uv run genai-pipeline --steps db")
+        sys.exit(1)
+
     conn = sqlite3.connect(DB_FILE)
     existing_cols = {r[1] for r in conn.execute("PRAGMA table_info(players)").fetchall()}
     if "position" in existing_cols:

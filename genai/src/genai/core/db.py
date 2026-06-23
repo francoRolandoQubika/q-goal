@@ -68,8 +68,8 @@ def get_conn() -> sqlite3.Connection:
         _conn = sqlite3.connect(DB_FILE, check_same_thread=False)
         _conn.row_factory = sqlite3.Row
         if not already_exists:
-            if not Path(EMBEDDINGS_FILE).exists() or not Path(METADATA_FILE).exists():
-                raise FileNotFoundError("Run python -m genai.pipeline first.")
+            if not Path(EMBEDDINGS_FILE).is_file() or not Path(METADATA_FILE).is_file():
+                raise FileNotFoundError("Run uv run genai-pipeline first.")
             _build(_conn)
             print(f"[db] Saved to {DB_FILE}")
         else:
