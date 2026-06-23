@@ -144,7 +144,6 @@ def get_face_image(player_id: int):
     row = get_player(player_id)
     if not row:
         raise HTTPException(status_code=404, detail="Player not found")
-    # face_path is stored relative to DATA_DIR in the DB
     face_path = Path(row["face_path"])
     if not face_path.is_absolute():
         face_path = DATA_DIR / face_path
@@ -153,14 +152,37 @@ def get_face_image(player_id: int):
     return FileResponse(face_path, media_type="image/jpeg")
 
 
+@app.get("/photos/{player_id}")
+def get_player_photo(player_id: int):
+    """Serve the original full headshot (from players/) by their DB primary key."""
+    row = get_player(player_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Player not found")
+    face_path = Path(row["face_path"])
+    photo_dir = DATA_DIR / "players" / face_path.parent.name
+    for ext in (".jpg", ".jpeg", ".png"):
+        candidate = photo_dir / (face_path.stem + ext)
+        if candidate.exists():
+            return FileResponse(candidate, media_type=f"image/{ext.lstrip('.')}")
+    raise HTTPException(status_code=404, detail="Player photo not found on disk")
+
+
 # ── Quiz endpoints ─────────────────────────────────────────────────────────────
 
 class QuizStartRequest(BaseModel):
     role: str
 
+class QuizAnswerOption(BaseModel):
+    key:  str
+    text: str
+
+class QuizQuestion(BaseModel):
+    question: str
+    answers:  list[QuizAnswerOption]
+
 class QuizStartResponse(BaseModel):
     session_id:      str
-    questions:       list[str]
+    questions:       list[QuizQuestion]
     total_questions: int
 
 

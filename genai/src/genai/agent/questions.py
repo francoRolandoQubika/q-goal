@@ -12,6 +12,19 @@ from genai.core.config import DATA_DIR
 
 DB_FILE = str(DATA_DIR / "players.db")
 
+# ── Teams included in the quiz pool ──────────────────────────────────────────
+QUIZ_TEAMS = {
+    # Latin America
+    "argentina", "brazil", "uruguay", "colombia",
+    "mexico", "ecuador", "paraguay",
+    # Europe — superstar nations
+    "spain", "france", "england", "portugal",
+    "germany", "netherlands", "norway", "belgium",
+    "croatia",
+    # Rest of world — iconic players
+    "korea_republic", "egypt", "morocco", "senegal", "japan", "usa",
+}
+
 # ── Question themes (LLM generates the actual question text each run) ─────────
 
 QUESTION_THEMES = [
@@ -82,6 +95,11 @@ def _build_query(filters: dict, exclude_ids: list[int]) -> tuple[str, dict]:
     """Build a parameterised WHERE clause from slot filter criteria and an exclusion list."""
     conditions: list[str] = ["position IS NOT NULL"]
     params: dict[str, Any] = {}
+
+    team_ph = ", ".join(f":team{i}" for i in range(len(QUIZ_TEAMS)))
+    conditions.append(f"team IN ({team_ph})")
+    for i, t in enumerate(QUIZ_TEAMS):
+        params[f"team{i}"] = t
 
     if "position_in" in filters:
         ph = ", ".join(f":p{i}" for i in range(len(filters["position_in"])))

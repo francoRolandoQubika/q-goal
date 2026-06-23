@@ -66,16 +66,22 @@ def start_quiz_session(role: str) -> dict:
             "- Situación concreta y divertida con contexto tech, relevante para su rol\n"
             "- 4 opciones (A, B, C, D) que reflejen personalidades distintas\n"
             "- Usá emojis\n\n"
-            'Devolvé SOLO un JSON array: [{"number": 1, "text": "..."}, ...]'
+            "Devolvé SOLO un JSON array con este formato exacto:\n"
+            '[{"number": 1, "question": "...", "answers": [{"key": "A", "text": "..."}, {"key": "B", "text": "..."}, {"key": "C", "text": "..."}, {"key": "D", "text": "..."}]}, ...]'
         )),
     ])
 
     try:
         questions_data = _parse_json(resp.content)
-        questions = [q["text"] for q in questions_data]
+        questions = [
+            {
+                "question": q["question"],
+                "answers": q["answers"],
+            }
+            for q in questions_data
+        ]
     except Exception:
-        # Fallback: split by numbered lines if JSON fails
-        questions = [resp.content]
+        questions = []
 
     session_id = str(uuid.uuid4())
     _sessions[session_id] = {"questions": questions, "role": role}
@@ -100,7 +106,7 @@ def process_quiz_answers(session_id: str, answers: list[str]) -> dict:
 
     # ── LLM call 1: extract all traits from all answers ───────────────────────
     qa_text = "\n".join(
-        f"Pregunta {i + 1}: {q}\nRespuesta: {a}"
+        f"Pregunta {i + 1}: {q['question']}\nRespuesta: {a}"
         for i, (q, a) in enumerate(zip(questions, answers))
     )
 
