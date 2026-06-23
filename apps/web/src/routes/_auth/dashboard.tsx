@@ -1,11 +1,17 @@
 import { Button } from "@q-goal/ui/components/button";
-import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { DashboardHeader } from "../../components/dashboard-header";
 import { PlayerCard } from "../../components/player-card";
-import type { DashboardState } from "../../lib/dashboard-types";
+import { fetchQuizResult } from "../../lib/quiz-result";
 
 export const Route = createFileRoute("/_auth/dashboard")({
+  loader: async () => {
+    const result = await fetchQuizResult();
+    if (!result) {
+      throw redirect({ to: "/quiz" });
+    }
+    return result;
+  },
   component: DashboardPage,
 });
 
@@ -22,23 +28,10 @@ const TEAM_COLORS: Record<string, { bg: string; accent: string; text: string }> 
 };
 
 function DashboardPage() {
-  const navigate = useNavigate();
   const { session } = Route.useRouteContext();
-  const state = useRouterState({
-    select: (s) => s.location.state as unknown as DashboardState | undefined,
-  });
+  const data = Route.useLoaderData();
 
-  useEffect(() => {
-    if (!state) {
-      navigate({ to: "/quiz", replace: true });
-    }
-  }, [state, navigate]);
-
-  if (!state) {
-    return null;
-  }
-
-  const team = state.assignments[0]?.player.team ?? "";
+  const team = data.assignments[0]?.player.team ?? "";
   const theme = TEAM_COLORS[team.toLowerCase()] ?? TEAM_COLORS.default;
 
   return (
@@ -50,16 +43,16 @@ function DashboardPage() {
       <DashboardHeader
         name={session.data?.user.name ?? ""}
         avatarUrl={session.data?.user.image}
-        role={state.role}
+        role={data.role}
         team={team}
       />
 
       <div className="px-6 pb-6 space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {state.assignments.length === 0 ? (
+          {data.assignments.length === 0 ? (
             <p className="col-span-full text-center opacity-70">No results yet</p>
           ) : (
-            state.assignments.map((assignment) => (
+            data.assignments.map((assignment) => (
               <PlayerCard
                 key={assignment.player.id}
                 assignment={assignment}
@@ -69,7 +62,7 @@ function DashboardPage() {
           )}
         </div>
 
-        {state.outro && <p className="text-base leading-relaxed">{state.outro}</p>}
+        {data.outro && <p className="text-base leading-relaxed">{data.outro}</p>}
 
         <div className="flex gap-3">
           <Button disabled>Download PNG</Button>

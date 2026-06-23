@@ -4,7 +4,7 @@ summary: >-
   The **db** package is the shared database abstraction layer for the q-goal
   monorepo. It defines the PostgreSQL schema using Drizzle ORM, exports a
   connected ...
-last_updated: '2026-06-23T03:08:58.598Z'
+last_updated: '2026-06-23T19:57:02.000Z'
 tags:
   - service
   - typescript
@@ -19,10 +19,11 @@ The **db** package is the shared database abstraction layer for the q-goal monor
 
 ## Public API / Surface
 
-- **`src/index.ts`** — Main entry point. Exports the configured Drizzle database client instance and all schema tables via `import { db, user, session, account } from '@q-goal/db'`
+- **`src/index.ts`** — Main entry point. Exports the configured Drizzle database client and re-exports every schema table (`export * from "./schema"`) so consumers can `import { db, user, session, account, quizResult } from '@q-goal/db'`
 - **`src/schema/{domain}.ts`** — Schema definitions organized by domain:
   - `schema/auth.ts` — Better-Auth tables (`user`, `session`, `account`) and relationships
-  - `schema/{domain}.ts` — Application-specific entities (e.g., `items`, `matches`)
+  - `schema/quiz.ts` — `quiz_result` table (persisted quiz outcome per user)
+  - `schema/{domain}.ts` — Additional application-specific entities
 
 ## Internal Architecture
 
@@ -49,9 +50,10 @@ All database interactions are parameterized (Drizzle enforces this); no raw SQL 
 - **`user`** — User accounts (id, name, email, emailVerified, createdAt, updatedAt)
 - **`session`** — Active sessions linked to users (userId foreign key, sessionToken, expires)
 - **`account`** — OAuth provider links (userId, provider, providerAccountId, accessToken, refreshToken)
-- **`{domain}_*`** — Application tables (e.g., `items`, `matches`) organized by business domain
+- **`quiz_result`** — Persisted quiz outcome, one row per user (`userId` unique FK → `user.id`, cascade): `role`, `outro`, `assignments` (jsonb), audit timestamps; indexed on `userId`
+- **`{domain}_*`** — Additional application tables organized by business domain
 
-Relations: `user` ↔ `session` (one-to-many), `user` ↔ `account` (one-to-many), cascade delete configured.
+Relations: `user` ↔ `session` (one-to-many), `user` ↔ `account` (one-to-many), `user` ↔ `quiz_result` (one-to-one), cascade delete configured.
 
 ## Configuration
 

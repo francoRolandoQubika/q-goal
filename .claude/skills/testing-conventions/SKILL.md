@@ -79,6 +79,29 @@ describe('POST /items', () => {
 
 Always hit a real (test) database, not a mock. Prior incident: mocked tests passed but production migrations failed. See [[postgres-port-5433]].
 
+### Auth-guarded endpoints: mint a real session cookie
+
+Endpoints behind `auth.api.getSession` return 401 without a session, so an anonymous `app.request` only ever exercises the guard. To test the authenticated path, sign up/in through `/api/auth/*` and convert the response into a `cookie` header with Better-Auth's `convertSetCookieToCookie` test helper, then pass it to `app.request`. Do not stub the session.
+
+```typescript
+import { convertSetCookieToCookie } from 'better-auth/test';
+
+async function getCookie(email: string, password: string): Promise<string> {
+  const res = await app.request('/api/auth/sign-in/email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  return convertSetCookieToCookie(res.headers).get('cookie') ?? '';
+}
+
+// Authenticated request
+const cookie = await getCookie('user-a@test.com', 'password123456');
+const res = await app.request('/api/quiz-result', { headers: { cookie } });
+```
+
+Always include an unauthenticated case (assert 401 and that the DB was not mutated) alongside the happy path, and clean up auth rows (`user`, plus the table under test) in `afterAll`.
+
 ## What NOT to Mock
 
 **Do not mock the database.** Use a real test database (pg, sqlite, or in-memory). Mocking Drizzle relationships or queries masks migration issues and schema bugs.

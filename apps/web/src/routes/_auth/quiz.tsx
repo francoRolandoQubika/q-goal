@@ -2,13 +2,21 @@ import { Button } from "@q-goal/ui/components/button";
 import { Input } from "@q-goal/ui/components/input";
 import { Label } from "@q-goal/ui/components/label";
 import { useForm } from "@tanstack/react-form";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import z from "zod";
 import { env } from "@q-goal/env/web";
 import type { Assignment } from "../../lib/dashboard-types";
+import { fetchQuizResult, saveQuizResult } from "../../lib/quiz-result";
 
 export const Route = createFileRoute("/_auth/quiz")({
+  loader: async () => {
+    const result = await fetchQuizResult();
+    if (result) {
+      throw redirect({ to: "/dashboard" });
+    }
+    return null;
+  },
   component: QuizPage,
 });
 
@@ -37,6 +45,8 @@ type QuizState =
       answers: string[];
     }
   | { step: "submitting"; role: string; sessionId: string; answers: string[] }
+  | { step: "saving"; role: string; outro: string; assignments: Assignment[] }
+  | { step: "save-failed"; role: string; outro: string; assignments: Assignment[] }
   | { step: "error"; kind: "expired" | "generic"; message: string };
 
 const ANSWER_OPTIONS = ["A", "B", "C", "D"] as const;
@@ -160,6 +170,25 @@ function ErrorStep({
   );
 }
 
+function SaveFailedStep({
+  state,
+  onRetry,
+}: {
+  state: Extract<QuizState, { step: "save-failed" }>;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="mx-auto w-full max-w-md mt-10 p-6 text-center space-y-4">
+      <p className="text-red-500">Your result is ready but could not be saved. Please retry.</p>
+      <p className="text-muted-foreground text-sm">
+        Role: {state.role} · {state.assignments.length} assignment
+        {state.assignments.length !== 1 ? "s" : ""}
+      </p>
+      <Button onClick={onRetry}>Save &amp; continue</Button>
+    </div>
+  );
+}
+
 function QuizPage() {
   const navigate = useNavigate();
   const [quizState, setQuizState] = useState<QuizState>({ step: "role-input" });
@@ -253,21 +282,31 @@ function QuizPage() {
       }
 
       const data: AnswerResponse = await response.json();
-      navigate({
-        to: "/dashboard",
-        state: (prev) => ({
-          ...prev,
-          assignments: data.assignments,
-          outro: data.outro,
-          role,
-        }),
-      });
+      await persistResult({ role, outro: data.outro, assignments: data.assignments });
     } catch {
       setQuizState({
         step: "error",
         kind: "generic",
         message: "Could not submit answers. Please try again.",
       });
+    }
+  }
+
+  async function persistResult({
+    role,
+    outro,
+    assignments,
+  }: {
+    role: string;
+    outro: string;
+    assignments: Assignment[];
+  }) {
+    setQuizState({ step: "saving", role, outro, assignments });
+    try {
+      await saveQuizResult({ role, outro, assignments });
+      navigate({ to: "/dashboard" });
+    } catch {
+      setQuizState({ step: "save-failed", role, outro, assignments });
     }
   }
 
@@ -279,7 +318,11 @@ function QuizPage() {
     return <RoleInputStep onSubmit={handleRoleSubmit} />;
   }
 
-  if (quizState.step === "loading-questions" || quizState.step === "submitting") {
+  if (
+    quizState.step === "loading-questions" ||
+    quizState.step === "submitting" ||
+    quizState.step === "saving"
+  ) {
     return (
       <div className="mx-auto w-full max-w-md mt-10 p-6 text-center">
         <p className="text-muted-foreground">Loading...</p>
@@ -289,6 +332,21 @@ function QuizPage() {
 
   if (quizState.step === "answering") {
     return <AnsweringStep state={quizState} onAnswer={handleAnswer} />;
+  }
+
+  if (quizState.step === "save-failed") {
+    return (
+      <SaveFailedStep
+        state={quizState}
+        onRetry={() =>
+          persistResult({
+            role: quizState.role,
+            outro: quizState.outro,
+            assignments: quizState.assignments,
+          })
+        }
+      />
+    );
   }
 
   return <ErrorStep state={quizState} onRestart={handleRestart} />;
