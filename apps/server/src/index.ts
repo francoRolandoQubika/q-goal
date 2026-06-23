@@ -49,6 +49,22 @@ const quizResultBodySchema = z.object({
     .min(1),
 });
 
+// Postgres jsonb (and text) columns reject NUL (U+0000); upstream LLM output
+// occasionally contains stray control characters. Strip them recursively so a
+// valid-looking result is always persistable instead of failing the insert.
+function stripNullChars<T>(value: T): T {
+  if (typeof value === "string") {
+    return value.replaceAll("\u0000", "") as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map(stripNullChars) as T;
+  }
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, stripNullChars(v)])) as T;
+  }
+  return value;
+}
+
 app.get("/api/quiz-result", async (c) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session) {
@@ -80,7 +96,9 @@ app.post("/api/quiz-result", async (c) => {
     return c.json({ error: parsed.error.flatten() }, 400);
   }
 
-  const { role, outro, assignments } = parsed.data;
+  const role = stripNullChars(parsed.data.role);
+  const outro = stripNullChars(parsed.data.outro);
+  const assignments = stripNullChars(parsed.data.assignments);
   const userId = session.user.id;
 
   const [row] = await db

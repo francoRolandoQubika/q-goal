@@ -179,6 +179,38 @@ describe("POST /api/quiz-result — upsert overwrites existing row", () => {
   });
 });
 
+describe("POST /api/quiz-result — sanitizes NUL characters", () => {
+  it("strips U+0000 from string fields so the jsonb insert succeeds (no 500)", async () => {
+    const cookie = await getCookie("user-a@test.com", "password123456");
+    const dirtyBody = {
+      role: "mid\u0000fielder",
+      outro: "Great\u0000match",
+      assignments: [
+        {
+          title: "Playmaker",
+          description: "Vision\u0000and control",
+          player: { id: 7, name: "Player", team: "Argentina", club: "SL Ben\u0000fica" },
+        },
+      ],
+    };
+
+    const res = await app.request("/api/quiz-result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", cookie },
+      body: JSON.stringify(dirtyBody),
+    });
+    expect(res.status).toBe(200);
+
+    const getRes = await app.request("/api/quiz-result", { headers: { cookie } });
+    const row = (await getRes.json()) as QuizResultRow & {
+      assignments: { player: { club: string } }[];
+    };
+    expect(row.role).toBe("midfielder");
+    expect(row.outro).toBe("Greatmatch");
+    expect(row.assignments[0]?.player.club).toBe("SL Benfica");
+  });
+});
+
 describe("happy path — POST → GET → DELETE → null", () => {
   it("persists on POST, returns on GET, removes on DELETE", async () => {
     const cookie = await getCookie("user-a@test.com", "password123456");
