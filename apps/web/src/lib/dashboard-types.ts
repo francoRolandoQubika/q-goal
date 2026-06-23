@@ -16,8 +16,13 @@ export interface Assignment {
   description: string;
 }
 
-export interface DashboardState {
-  assignments: Assignment[];
-  outro: string;
+export interface QuizResult {
+  id?: string;
   role: string;
+  outro: string;
+  assignments: Assignment[];
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+export type DashboardState = QuizResult;

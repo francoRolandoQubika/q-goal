@@ -18,7 +18,7 @@ function RouteComponent() {
         className="w-full"
         onClick={() =>
           authClient.signIn.social(
-            { provider: "google", callbackURL: `${window.location.origin}/quiz` },
+            { provider: "google", callbackURL: `${window.location.origin}/` },
             {
               onError: (error) => {
                 toast.error(error.error.message || error.error.statusText);
