@@ -2,17 +2,17 @@
 
 ## Tech Stack
 
-- **Runtime:** Bun (pinned — see `packageManager` in root `package.json`)
+- **Runtime:** Bun (pinned — see `packageManager` in `package.json`)
 - **Workspace:** npm workspaces (`apps/*`, `packages/*`)
 - **Shared:** React 19, Zod
 
-- **web** (TypeScript) — React 19, TanStack Router, @ai-sdk/react, @hookform/resolvers, @tailwindcss/vite
-- **server** (TypeScript) — Hono 4, @ai-sdk/google, Better-Auth, Drizzle ORM, pg
-- **auth** (TypeScript) — Better-Auth 1.6, Drizzle ORM, Zod
-- **db** (TypeScript) — Drizzle ORM 0.45, pg
-- **ui** (TypeScript) — React 19, @base-ui/react, lucide-react, Tailwind CSS
-- **etl** (Python) — uv managed CLI
-- **genai** (Python) — uv managed CLI
+- **web** (TypeScript) — React 19.2.6, TanStack Router 1.168, @ai-sdk/react, @tailwindcss/vite
+- **server** (TypeScript) — Hono 4.8.2, @ai-sdk/google, Better-Auth, Drizzle ORM
+- **genai** (Python) — FastAPI 0.137, langgraph 1.2+, langchain-core, langchain-openai, deepface
+- **etl** (Python) — CLI (uv-managed)
+- **auth** (TypeScript) — Better-Auth 1.6.11, Drizzle ORM, Zod
+- **db** (TypeScript) — Drizzle ORM 0.45.1, pg 8.17.1, Zod
+- **ui** (TypeScript) — React 19.2.6, Base UI 1.0.0, lucide-react, next-themes
 
 ## File Placement Guide
 
@@ -25,10 +25,11 @@ Packages in `packages/*` are imported as `@q-goal/<name>` — never use relative
 | File Type | Location Pattern | Example |
 | --------- | ---------------- | ------- |
 | TanStack root route | `src/routes/__root.tsx` | `apps/web/src/routes/__root.tsx` |
-| TanStack layout route | `src/routes/{group}/route.tsx` | `apps/web/src/routes/_auth/route.tsx` |
 | TanStack page route | `src/routes/{name}.tsx` | `apps/web/src/routes/ai.tsx` |
 | React component | `src/components/{name}.tsx` | `apps/web/src/components/header.tsx` |
-| CSS tokens / brand styles | `src/styles/{name}.css` | `apps/web/src/styles/brand.css` |
+| Auth client lib | `src/lib/auth-client.ts` | `apps/web/src/lib/auth-client.ts` |
+| Local type definitions | `src/lib/{domain}-types.ts` | `apps/web/src/lib/dashboard-types.ts` |
+| App entry | `src/main.tsx` | `apps/web/src/main.tsx` |
 
 ### apps/server (Hono)
 
@@ -36,11 +37,11 @@ Packages in `packages/*` are imported as `@q-goal/<name>` — never use relative
 | --------- | ---------------- | ------- |
 | Hono server entry | `src/index.ts` | `apps/server/src/index.ts` |
 
-### packages/auth
+### packages/auth (Better-Auth)
 
 | File Type | Location Pattern | Example |
 | --------- | ---------------- | ------- |
-| Auth config | `src/index.ts` | `packages/auth/src/index.ts` |
+| Auth config entry | `src/index.ts` | `packages/auth/src/index.ts` |
 
 ### packages/db (Drizzle)
 
@@ -56,55 +57,68 @@ Packages in `packages/*` are imported as `@q-goal/<name>` — never use relative
 | UI component | `src/components/{name}.tsx` | `packages/ui/src/components/button.tsx` |
 | Utility function | `src/lib/utils.ts` | `packages/ui/src/lib/utils.ts` |
 
-### etl, genai (Python CLIs)
+### genai (FastAPI + LangGraph)
 
 | File Type | Location Pattern | Example |
 | --------- | ---------------- | ------- |
-| Package entry | `src/{service}/__init__.py` | `etl/src/etl/__init__.py` |
+| FastAPI app entry | `src/genai/api.py` | `genai/src/genai/api.py` |
+| Pipeline entry | `src/genai/pipeline.py` | `genai/src/genai/pipeline.py` |
+| LangGraph agent module | `src/genai/agent/{module}.py` | `genai/src/genai/agent/graph.py` |
+| ETL submodule | `src/genai/etl/{task}.py` | `genai/src/genai/etl/enrich.py` |
+| Core config | `src/genai/core/config.py` | `genai/src/genai/core/config.py` |
+
+### etl (Python CLI)
+
+| File Type | Location Pattern | Example |
+| --------- | ---------------- | ------- |
+| Package entry | `src/etl/__init__.py` | `etl/src/etl/__init__.py` |
 
 ## Directory Structure
 
 ```
 project/
 ├── apps/
-│   ├── web/                React frontend
-│   └── server/             Hono backend
-├── etl/                    Python CLI
-├── genai/                  Python CLI
+│   ├── web/   React frontend
+│   └── server/   Hono backend
+├── etl/   Python CLI
+├── genai/   FastAPI backend
 └── packages/
-    ├── auth/               Better-Auth library
-    ├── db/                 Drizzle ORM library
-    └── ui/                 React UI library
+    ├── auth/   Better-Auth library
+    ├── db/   Drizzle library
+    └── ui/   React component library
 ```
-
-## Services & Ports
-
-| Service | Type | Port | Role |
-| ------- | ---- | ---- | ---- |
-| web | frontend | 3001 | React frontend |
-| server | backend | 3000 | Hono REST API + AI SDK |
-| auth | library | — (library — no runtime) | Better-Auth library |
-| db | library | — (library — no runtime) | Drizzle ORM library |
-| ui | library | — (library — no runtime) | React UI component library |
-| etl | cli | — (CLI — no runtime) | Python data pipeline CLI |
-| genai | cli | — (CLI — no runtime) | Python AI services CLI |
-| postgres | database | 5433 | PostgreSQL database |
 
 ## Essential Commands
 
 | Command | Description |
 | ------- | ----------- |
 | `bun install` | Install dependencies |
-| `bun run docker:up` | Build + start web, server, postgres in Docker |
-| `bun run db:start` | Start postgres only (host port 5433) |
-| `bun run db:push` | Apply Drizzle migrations |
-| `bun run dev` | Start web + server dev servers |
-| `bun run check-types` | Run type-checker across all services |
-| `uv sync` | Sync Python dependencies (etl, genai) |
+| `bun run docker:up` | Build and start (web, server, postgres) |
+| `bun run db:start` | Start postgres only (port 5433) |
+| `bun run dev` | Start web + server dev |
+| `bun run check-types` | Type-check all packages |
+| `oxlint && oxfmt --write` | Lint and format (JS/TS) |
+| `uv sync` | Sync Python dependencies |
 | `uv run etl` | Run ETL CLI |
-| `uv run genai` | Run GenAI CLI |
-| `uv run ruff check --fix` | Fix Python lint issues |
-| `uv run ruff format` | Format Python code |
+| `uv run genai-api` | Start FastAPI server (port 8002) |
+| `uv run genai-pipeline` | Run WC2026 face-match ETL pipeline |
+| `uv run ruff check --fix` | Lint and fix Python |
+| `uv run ruff format` | Format Python |
+
+## Services & Ports
+
+| Service | Type | Port | Role |
+| ------- | ---- | ---- | ---- |
+| web | frontend | 3001 | React frontend |
+| server | backend | 3000 | Hono backend |
+| genai | backend | 8002 | FastAPI backend |
+| auth | library | — | Better-Auth library |
+| db | library | — | Drizzle ORM library |
+| ui | library | — | React component library |
+| etl | cli | — | Python ETL CLI |
+| postgres | database | 5433 | PostgreSQL (host port remapped from 5432) |
+| google-generative-ai | llm-service | — (SaaS) | Google Cloud generative AI |
+| openai | llm-service | — (SaaS) | OpenAI API |
 
 <!-- LLM_WIKI_START -->
 ## LLM Wiki

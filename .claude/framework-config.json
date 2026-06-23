@@ -6,30 +6,30 @@
     "services": [
       {
         "id": "web",
-        "name": "web",
+        "name": "Web Application",
         "path": "apps/web",
         "type": "frontend",
         "language": "typescript",
+        "language_version": "6.x",
         "frameworks": {
-          "main": "React 19"
+          "main": "React 19.2.6 + TanStack Router 1.168"
         },
-        "testing": {},
         "environment": {
           "port": 3001
         },
-        "file_count": 14,
+        "file_count": 16,
         "manifest_file": "apps/web/package.json"
       },
       {
         "id": "server",
-        "name": "server",
+        "name": "API Server",
         "path": "apps/server",
         "type": "backend",
         "language": "typescript",
+        "language_version": "6.x",
         "frameworks": {
-          "main": "Hono 4"
+          "main": "Hono 4.8.2"
         },
-        "testing": {},
         "environment": {
           "port": 3000
         },
@@ -37,65 +37,68 @@
         "manifest_file": "apps/server/package.json"
       },
       {
-        "id": "auth",
-        "name": "@q-goal/auth",
-        "path": "packages/auth",
-        "type": "library",
-        "language": "typescript",
+        "id": "genai",
+        "name": "GenAI Backend",
+        "path": "genai",
+        "type": "backend",
+        "language": "python",
+        "language_version": "3.13",
         "frameworks": {
-          "main": "Better-Auth 1.6"
+          "main": "FastAPI 0.137"
         },
-        "testing": {},
-        "file_count": 1,
-        "manifest_file": "packages/auth/package.json"
-      },
-      {
-        "id": "db",
-        "name": "@q-goal/db",
-        "path": "packages/db",
-        "type": "library",
-        "language": "typescript",
-        "frameworks": {
-          "orm": "Drizzle ORM 0.45"
+        "environment": {
+          "port": 8002
         },
-        "testing": {},
-        "file_count": 3,
-        "manifest_file": "packages/db/package.json"
-      },
-      {
-        "id": "ui",
-        "name": "@q-goal/ui",
-        "path": "packages/ui",
-        "type": "library",
-        "language": "typescript",
-        "frameworks": {},
-        "testing": {},
-        "file_count": 9,
-        "manifest_file": "packages/ui/package.json"
+        "file_count": 17,
+        "manifest_file": "genai/pyproject.toml"
       },
       {
         "id": "etl",
-        "name": "etl",
+        "name": "ETL CLI",
         "path": "etl",
         "type": "cli",
         "language": "python",
         "language_version": "3.13",
         "frameworks": {},
-        "testing": {},
         "file_count": 1,
         "manifest_file": "etl/pyproject.toml"
       },
       {
-        "id": "genai",
-        "name": "genai",
-        "path": "genai",
-        "type": "cli",
-        "language": "python",
-        "language_version": "3.13",
-        "frameworks": {},
-        "testing": {},
-        "file_count": 1,
-        "manifest_file": "genai/pyproject.toml"
+        "id": "auth",
+        "name": "Authentication Library",
+        "path": "packages/auth",
+        "type": "library",
+        "language": "typescript",
+        "language_version": "6.x",
+        "frameworks": {
+          "main": "Better-Auth 1.6.11"
+        },
+        "manifest_file": "packages/auth/package.json"
+      },
+      {
+        "id": "db",
+        "name": "Database Library",
+        "path": "packages/db",
+        "type": "library",
+        "language": "typescript",
+        "language_version": "6.x",
+        "frameworks": {
+          "orm": "Drizzle ORM 0.45.1"
+        },
+        "file_count": 3,
+        "manifest_file": "packages/db/package.json"
+      },
+      {
+        "id": "ui",
+        "name": "UI Component Library",
+        "path": "packages/ui",
+        "type": "library",
+        "language": "typescript",
+        "language_version": "6.x",
+        "frameworks": {
+          "main": "React 19.2.6 + Base UI 1.0.0"
+        },
+        "manifest_file": "packages/ui/package.json"
       }
     ],
     "is_monorepo": true,
@@ -103,17 +106,18 @@
     "package_manager": "bun",
     "infrastructure": [
       "docker",
-      "docker-compose",
-      "nginx"
+      "docker-compose"
     ],
     "software_version_control": "github",
     "file_counts": {
-      "total": 34,
+      "total": 56,
       "by_language": {
-        "typescript": 29,
-        "css": 2,
-        "python": 2,
-        "html": 1
+        "typescript": 30,
+        "python": 18,
+        "css": 3,
+        "javascript": 3,
+        "html": 1,
+        "shell": 1
       }
     },
     "automation": {
@@ -121,27 +125,13 @@
       "justfiles": [],
       "taskfiles": [],
       "shell_scripts": [],
-      "ci_hints": [
-        {
-          "file": "docker-compose.yml",
-          "commands": [
-            "docker compose up -d postgres",
-            "docker compose up postgres",
-            "docker compose stop postgres",
-            "docker compose down postgres",
-            "docker compose build",
-            "docker compose up -d --build",
-            "docker compose down",
-            "docker compose logs -f"
-          ]
-        }
-      ]
+      "ci_hints": []
     },
     "readme_run_sections": [
       {
         "path": "README.md",
         "heading": "Getting Started",
-        "body": "This project uses PostgreSQL with Drizzle ORM. You can run it **fully in Docker** or **locally with hot reload**. Both share the dependency and environment setup below.",
+        "body": "This project uses PostgreSQL with Drizzle ORM. You can run it **fully in Docker**\nor **locally with hot reload**. Both share the dependency and environment setup below.\n\n### Prerequisites\n\n- [Bun](https://bun.sh) (see `packageManager` in `package.json` for the pinned version)\n- [Docker](https://www.docker.com) — required for the Docker workflow, and the easiest way to run Postgres for local development\n- [uv](https://docs.astral.sh/uv/) — only needed to work on the Python projects (`etl`, `genai`)",
         "fenced_blocks": [
           "bun install",
           "cp apps/server/.env.example apps/server/.env\ncp apps/web/.env.example apps/web/.env",
@@ -153,7 +143,7 @@
           "bun run db:push",
           "bun run dev           # web + server",
           "uv sync",
-          "uv run etl       # -> \"Hello from etl!\"\nuv run genai     # -> \"Hello from genai!\"",
+          "uv run etl               # -> \"Hello from etl!\"\nuv run genai-api         # Start the GenAI FastAPI server (port 8002)\nuv run genai-pipeline    # Run the WC2026 face-match ETL pipeline",
           "uv add --package etl pandas\nuv add --package genai openai",
           "uv run ruff check --fix\nuv run ruff format"
         ]
@@ -187,13 +177,13 @@
         },
         {
           "tier": "readme",
-          "command": "uv run etl       # -> \"Hello from etl!\"",
+          "command": "uv run etl               # -> \"Hello from etl!\"",
           "description": "From README.md § Getting Started",
           "source": "README.md#getting-started"
         },
         {
           "tier": "readme",
-          "command": "uv run genai     # -> \"Hello from genai!\"",
+          "command": "uv run genai-pipeline    # Run the WC2026 face-match ETL pipeline",
           "description": "From README.md § Getting Started",
           "source": "README.md#getting-started"
         },
@@ -214,13 +204,8 @@
         {
           "tier": "package_manager",
           "command": "bun run build",
-          "source": "documented_commands(package_json)",
+          "source": "documented_commands(documented)",
           "per_service": "_root"
-        },
-        {
-          "tier": "ci",
-          "command": "docker compose build",
-          "source": "docker-compose.yml"
         }
       ],
       "start_dev": [
@@ -243,25 +228,16 @@
           "source": "README.md#getting-started"
         },
         {
+          "tier": "readme",
+          "command": "uv run genai-api         # Start the GenAI FastAPI server (port 8002)",
+          "description": "From README.md § Getting Started",
+          "source": "README.md#getting-started"
+        },
+        {
           "tier": "package_manager",
-          "command": "bun run dev",
-          "source": "documented_commands(package_json)",
+          "command": "bun run dev (web + server) | bun run dev:web | bun run dev:server | uv run genai-api | uv run genai-pipeline",
+          "source": "documented_commands(documented)",
           "per_service": "_root"
-        },
-        {
-          "tier": "ci",
-          "command": "docker compose up -d --build",
-          "source": "docker-compose.yml"
-        },
-        {
-          "tier": "ci",
-          "command": "docker compose up -d postgres",
-          "source": "docker-compose.yml"
-        },
-        {
-          "tier": "ci",
-          "command": "docker compose up postgres",
-          "source": "docker-compose.yml"
         }
       ],
       "run_lint": [
@@ -279,8 +255,24 @@
         },
         {
           "tier": "package_manager",
-          "command": "bun run check",
-          "source": "documented_commands(package_json)",
+          "command": "oxlint && oxfmt --write (for JS/TS) | uv run ruff check --fix (for Python)",
+          "source": "documented_commands(documented)",
+          "per_service": "_root"
+        }
+      ],
+      "run_tests": [
+        {
+          "tier": "package_manager",
+          "command": "not documented",
+          "source": "documented_commands(documented)",
+          "per_service": "_root"
+        }
+      ],
+      "run_typecheck": [
+        {
+          "tier": "package_manager",
+          "command": "bun run check-types",
+          "source": "documented_commands(documented)",
           "per_service": "_root"
         }
       ]

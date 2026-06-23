@@ -1,142 +1,112 @@
 ---
 name: code-conventions
-description: Project-specific coding conventions, validation rules, monorepo patterns, and gotchas
+description: Project-specific coding conventions for monorepo, Zod validation, Drizzle ORM, and shared packages
 disable-model-invocation: false
 version: 1.0
 ---
 
 # Code Conventions
 
-## Validation Rules
+## Monorepo Import Rules
 
-Zod is the validation library across the stack. Use consistent validator placement:
-
-- **Frontend forms:** Zod validator in the form component or custom hook; pair with `@hookform/resolvers` for React Hook Form
-- **Backend request DTOs:** Zod validator in `packages/db` or app-local service layer; validate in Hono route handler before passing to service
-- **Shared types:** Zod validator in shared `@q-goal/<package>` barrel; import and reuse everywhere
+Always import shared packages using the `@q-goal/<name>` alias, never relative paths across workspaces.
 
 ```typescript
-// packages/shared-validators (if created)
-import { z } from "zod";
+// WRONG — relative imports across packages
+import { schema } from '../../../packages/db/src/schema/auth';
 
-export const userCreateSchema = z.object({
+// CORRECT
+import { schema } from '@q-goal/db';
+```
+
+Shared modules (`@q-goal/auth`, `@q-goal/db`, `@q-goal/ui`) are the single source of truth. Re-exporting from their `src/index.ts` ensures downstream consumers see the public API.
+
+## Validation Rules
+
+Zod is the standard validator across TypeScript services. Use it at all boundaries: server DTOs, form inputs, shared types.
+
+```typescript
+// CORRECT — Zod schema at API boundary
+import { z } from 'zod';
+
+const createUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
 });
 
-export type UserCreate = z.infer<typeof userCreateSchema>;
-```
+type CreateUserDTO = z.infer<typeof createUserSchema>;
 
-```typescript
-// apps/server/src/routes/users.ts
-import { userCreateSchema } from "@q-goal/validators";
-
-app.post("/users", async (c) => {
-  const body = await c.req.json();
-  const parsed = userCreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return c.json({ errors: parsed.error.issues }, 400);
-  }
-  // Use parsed.data
+app.post('/users', async (c) => {
+  const result = createUserSchema.safeParse(await c.req.json());
+  if (!result.success) return c.json({ errors: result.error.flatten() }, 400);
+  // result.data is type-safe
 });
 ```
 
-## Monorepo Cross-Package Imports
+Share validation schemas in `packages/db` or create a `packages/schemas` if schemas span multiple domains. Never duplicate schema definitions.
 
-Never use relative paths across packages. Always import from the `@q-goal/<package>` namespace.
+## Data Layer Rules
+
+Drizzle ORM is the database abstraction. Always:
+
+1. Define schema in `packages/db/src/schema/{domain}.ts`
+2. Export from `packages/db/src/index.ts` so consumers access via `import { schema } from '@q-goal/db'`
+3. Run migrations with `bun run --filter @q-goal/db db:push`
 
 ```typescript
-// WRONG
-import { db } from "../../packages/db/src/index";
+// packages/db/src/schema/auth.ts
+import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
-// CORRECT
-import { db } from "@q-goal/db";
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
 ```
 
-Update the barrel exports (`packages/<name>/src/index.ts`) whenever you add a new public type or function.
-
-## Environment Variables
-
-Server and web each have their own `.env` file (copied from `.env.example` during setup). Keep environment-specific configuration in those files; never hardcode config.
-
-```bash
-# apps/server/.env.example
-DATABASE_URL=postgresql://...
-BETTER_AUTH_SECRET=<generated-by-openssl>
-GOOGLE_CLIENT_ID=<from-google-cloud-console>
-GOOGLE_CLIENT_SECRET=<from-google-cloud-console>
-```
+Keep Drizzle logic in the service layer; never expose ORM objects to the frontend. Always use prepared statements and parameterized queries (Drizzle does this by default).
 
 ## Gotchas
 
-### Better-Auth Session Management
+### Environment Variables Are Not Synchronized Across Services
 
-Better-Auth stores session state in the database. If you modify a user's role or permissions, the active session does NOT reflect the change until the user logs out and back in.
-
-```typescript
-// WRONG — user still has old role in this session
-await db.update(users).set({ role: "admin" }).where(eq(users.id, userId));
-// Response sent with old cached session
-
-// CORRECT — invalidate the session
-await db.update(users).set({ role: "admin" }).where(eq(users.id, userId));
-await auth.api.deleteSession({ sessionId: req.auth.session.id });
-```
-
-### Drizzle Transactions Don't Auto-Rollback
-
-Drizzle does not rollback on thrown exceptions. You must explicitly handle transaction scope.
+Each service reads its own `.env` file. The server, web, auth, and db packages each have separate env configurations.
 
 ```typescript
-// WRONG — orphans the order if inventory decrement fails
-async function createOrder(data: OrderDto) {
-  await db.insert(orders).values(data);
-  await inventoryService.decrement(data.items); // throws
-  // order exists without inventory
-}
+// WRONG — assumes DATABASE_URL exists in apps/web/.env
+const db = drizzle(process.env.DATABASE_URL);
 
-// CORRECT
-async function createOrder(data: OrderDto) {
-  return await db.transaction(async (tx) => {
-    const order = await tx.insert(orders).values(data).returning();
-    await inventoryService.decrement(data.items, tx);
-    return order;
-  });
-}
+// CORRECT — web imports shared db package which reads DATABASE_URL from packages/db context
+import { db } from '@q-goal/db';
 ```
 
-### Better-Auth OAuth Requires Cross-Origin Cookie Attributes
+### Bun Workspace Imports Require Exact Path Endings
 
-When `socialProviders` (e.g. Google OAuth) are enabled, the auth callback runs on the server origin while the web app is on a different origin. Without `sameSite: "none"` + `secure: true`, the session cookie is silently dropped and the user is not authenticated after the OAuth redirect.
+Node module resolution in Bun requires explicit `/src/index.ts` or the package.json `exports` field. Ambiguous paths fail silently.
 
 ```typescript
-// WRONG — OAuth callback cookie is rejected cross-origin
-betterAuth({ ... });
+// WRONG — Bun may not resolve this correctly
+import { schema } from '@q-goal/db';
 
-// CORRECT — add advanced.defaultCookieAttributes
-betterAuth({
-  socialProviders: { google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET } },
-  advanced: {
-    defaultCookieAttributes: {
-      sameSite: "none",
-      secure: true,
-      httpOnly: true,
-    },
-  },
-});
+// CORRECT — if packages/db/package.json lacks "exports", use full path
+import { schema } from '@q-goal/db/src/index.ts';
 ```
 
-### TanStack Router Params Are Always Strings
+Check `package.json` exports field; if missing, use full paths.
 
-`useParams()` returns strings, not parsed types. Validate/coerce them explicitly.
+### Postgres Connection Port Is 5433, Not 5432
+
+Docker remaps postgres to 5433 to avoid collision with the user's local Postgres.app.
 
 ```typescript
-// WRONG — param might be "invalid", not a number
-const { id } = useParams({ from: "/posts/$id" });
-const numId = id as number; // lies to TypeScript
-
-// CORRECT
-const { id } = useParams({ from: "/posts/$id" });
-const numId = parseInt(id, 10);
-if (isNaN(numId)) return <NotFound />;
+// CORRECT — connection string uses port 5433
+const connectionString = 'postgresql://user:pass@localhost:5433/q_goal';
 ```
+
+## Code-Style Conventions
+
+- **Imports:** sort by `node` → `@q-goal/*` → relative paths; use ES modules consistently
+- **Naming:** camelCase for variables/functions, PascalCase for types/classes, UPPER_SNAKE_CASE for constants
+- **React:** functional components only; use hooks; no class components
+- **Async/await:** prefer async/await over `.then()` chains; handle errors explicitly
+- **Type safety:** leverage TypeScript strict mode; avoid `any` and `as` casts

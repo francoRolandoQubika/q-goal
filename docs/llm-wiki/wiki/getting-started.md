@@ -10,7 +10,14 @@ _Reproduced verbatim from the README — the original wording is authoritative f
 
 _Source: `README.md` § Getting Started_
 
-> This project uses PostgreSQL with Drizzle ORM. You can run it **fully in Docker** or **locally with hot reload**. Both share the dependency and environment setup below.
+> This project uses PostgreSQL with Drizzle ORM. You can run it **fully in Docker**
+> or **locally with hot reload**. Both share the dependency and environment setup below.
+>
+> ### Prerequisites
+>
+> - [Bun](https://bun.sh) (see `packageManager` in `package.json` for the pinned version)
+> - [Docker](https://www.docker.com) — required for the Docker workflow, and the easiest way to run Postgres for local development
+> - [uv](https://docs.astral.sh/uv/) — only needed to work on the Python projects (`etl`, `genai`)
 
 ## Per-service commands (low-level)
 
@@ -18,6 +25,8 @@ _Source: `README.md` § Getting Started_
 
 | Action | Service | Command | Source |
 |---|---|---|---|
-| Start dev server | `_root` | `bun run dev` | `documented_commands(package_json)` |
-| Build | `_root` | `bun run build` | `documented_commands(package_json)` |
-| Lint | `_root` | `bun run check` | `documented_commands(package_json)` |
+| Start dev server | `_root` | `bun run dev (web + server) | bun run dev:web | bun run dev:server | uv run genai-api | uv run genai-pipeline` | `documented_commands(documented)` |
+| Run tests | `_root` | `not documented` | `documented_commands(documented)` |
+| Build | `_root` | `bun run build` | `documented_commands(documented)` |
+| Lint | `_root` | `oxlint && oxfmt --write (for JS/TS) | uv run ruff check --fix (for Python)` | `documented_commands(documented)` |
+| Typecheck | `_root` | `bun run check-types` | `documented_commands(documented)` |

@@ -1,76 +1,76 @@
 ---
 document_type: service
 summary: >-
-  Shared database library providing a type-safe PostgreSQL client and schema
-  definitions for the entire monorepo. It is the single source of truth for all
-  data...
-last_updated: '2026-06-18T21:06:25.817Z'
+  The **db** package is the shared database abstraction layer for the q-goal
+  monorepo. It defines the PostgreSQL schema using Drizzle ORM, exports a
+  connected ...
+last_updated: '2026-06-23T03:08:58.598Z'
 tags:
   - service
   - typescript
   - library
 service_id: db
 ---
-# db
+# Database Library (db)
 
 ## Purpose
 
-Shared database library providing a type-safe PostgreSQL client and schema definitions for the entire monorepo. It is the single source of truth for all data shapes and migrations.
+The **db** package is the shared database abstraction layer for the q-goal monorepo. It defines the PostgreSQL schema using Drizzle ORM, exports a connected database client, and provides domain-organized table definitions consumed by the [[server]], [[genai]], and [[auth]] services. All services that persist data route through this package, ensuring schema consistency and type safety across the system.
 
 ## Public API / Surface
 
-- **Exported singleton:** `db` — Drizzle ORM client instance for all database queries
-- **Exported schemas:** all table definitions from `src/schema/{domain}.ts`, aggregated via barrel export
-- **Entry point:** `@q-goal/db` (npm workspace import)
-- No HTTP routes, webhooks, or CLI commands (library only)
+- **`src/index.ts`** — Main entry point. Exports the configured Drizzle database client instance and all schema tables via `import { db, user, session, account } from '@q-goal/db'`
+- **`src/schema/{domain}.ts`** — Schema definitions organized by domain:
+  - `schema/auth.ts` — Better-Auth tables (`user`, `session`, `account`) and relationships
+  - `schema/{domain}.ts` — Application-specific entities (e.g., `items`, `matches`)
 
 ## Internal Architecture
 
-- **src/index.ts** — Main entry point; exports the `db` singleton via factory pattern (`createDb()`) and re-exports all schema tables
-- **src/schema/{domain}.ts** — Domain-scoped schema modules (e.g., `auth.ts`, `posts.ts`); each file defines related tables using Drizzle's `pgTable()` API
-- **src/schema/index.ts** — Barrel that re-exports all table definitions for aggregation at the package root
+Drizzle ORM provides the core abstraction. The package follows a code-first schema pattern:
 
-The `db` singleton reads `DATABASE_URL` at initialization and instantiates a Drizzle client with the full schema, creating a single connection pool shared across the monorepo.
+1. **Schema Definition** — `pgTable` builders define tables with column types, constraints, defaults, and indexes
+2. **Relations Layer** — `relations()` declares foreign key relationships (one-to-many, many-to-one) without explicit foreign key columns
+3. **Timestamps** — `$onUpdate()` hooks automatically refresh `updatedAt` on mutations
+4. **Adapters** — The Drizzle instance wraps with `drizzleAdapter` for Better-Auth integration, bridging auth session management to the database layer
 
-## Query Lifecycle
+All database interactions are parameterized (Drizzle enforces this); no raw SQL escaping needed.
 
-1. Consumer imports `db` and table(s) from `@q-goal/db`
-2. Consumer calls `db.select()`, `db.insert()`, `db.update()`, or `db.delete()` with table and SQL-like conditions
-3. Drizzle translates the query builder calls to SQL and executes via the `pg` driver
-4. PostgreSQL returns rows; Drizzle maps results to TypeScript types inferred from the schema
-5. Consumer receives typed promise (e.g., `Promise<User[]>`)
+## Consumption Lifecycle
+
+1. Service imports database client: `import { db } from '@q-goal/db'`
+2. Service imports schema table(s): `import { user, session } from '@q-goal/db'`
+3. Service constructs a query: `db.select().from(user).where(eq(user.email, email))`
+4. Drizzle compiles to parameterized SQL and executes against PostgreSQL
+5. Result is returned with full TypeScript type inference
 
 ## Data Layer
 
-Owns all PostgreSQL table definitions, split by logical domain:
+**Owned Tables:**
+- **`user`** — User accounts (id, name, email, emailVerified, createdAt, updatedAt)
+- **`session`** — Active sessions linked to users (userId foreign key, sessionToken, expires)
+- **`account`** — OAuth provider links (userId, provider, providerAccountId, accessToken, refreshToken)
+- **`{domain}_*`** — Application tables (e.g., `items`, `matches`) organized by business domain
 
-- **schema/auth.ts** — User, session, account, and verification tables managed by [[auth]] via Drizzle adapter
-- **schema/{domain}.ts** — Application-specific entities (e.g., posts, messages, goals)
-
-Migrations are introspection-based: schema changes in code are detected by Drizzle and applied via `bun run db:push`. No separate migrations folder; schema definitions in TypeScript are the source of truth.
+Relations: `user` ↔ `session` (one-to-many), `user` ↔ `account` (one-to-many), cascade delete configured.
 
 ## Configuration
 
-- **DATABASE_URL** — PostgreSQL connection string (e.g., `postgresql://user:password@localhost:5433/q-goal`); required at runtime for the Drizzle client to connect
+- **`DATABASE_URL`** — PostgreSQL connection string (format: `postgresql://user:password@host:port/database`). Required by Drizzle at client initialization.
 
 ## Integrations
 
-**Depends on:**
-- PostgreSQL database (port 5433 in Docker environment)
-- Drizzle ORM 0.45 (query builder and migration introspection)
+**PostgreSQL** (port 5433) — Primary data store. Drizzle client connects via DATABASE_URL connection pooling (pg library). Schema migrations applied via `bun run --filter @q-goal/db db:push` (Drizzle Kit).
 
-**Used by:**
-- [[auth]] — Better-Auth library reads and writes session, user, and account tables via the Drizzle adapter
-- [[server]] — Hono backend issues all queries through the exported `db` client
-- [[web]] — Indirectly; schema types are inferred for frontend form validation via Zod
-- [[etl]], [[genai]] — Optional; Python services can read PostgreSQL schema or query the database directly
+**Better-Auth** (via [[auth]]) — Consumes db schema via `drizzleAdapter(db, { provider: 'pg', schema })`. Better-Auth delegates all session/user/account writes to this database client, avoiding direct database code in the auth service.
 
 ## Service-Specific Patterns
 
-**Factory + singleton pattern:** `createDb()` ensures one connection pool per process and centralizes environment initialization.
+**Schema-as-Code** — Database schema is TypeScript; running migrations is code-first (`db:push` regenerates schema from definitions). No separate SQL migration files.
 
-**Domain-scoped schemas:** Each logical domain owns its own schema file (auth, posts, etc.), reducing merge conflicts and keeping related tables together.
+**Relations Declarative Pattern** — Foreign key relationships are declared via `relations()` builder, not inline foreign key columns. Enables clean separation of concerns: schema defines shape, relations define connectivity.
 
-**Barrel export aggregation:** `schema/index.ts` collects all tables; root `index.ts` re-exports them, allowing concise imports: `import { db, users, posts } from "@q-goal/db"`.
+**Adapter Pattern** — `drizzleAdapter` wraps the db client for Better-Auth. Allows services like **auth** to remain ORM-agnostic while leveraging Drizzle at the storage boundary.
 
-**Type-safe queries:** Drizzle's query API provides compile-time type inference; table shapes and query results are inferred directly from schema definitions, eliminating runtime mismatches between SQL and TypeScript.
+**Domain-Scoped Organization** — Schema files organized by business domain (auth.ts, items.ts). Tables and their relations co-locate within domain files. Reduces coupling; new domains add files without modifying existing ones.
+
+**Timestamp Automation** — `defaultNow()` + `$onUpdate()` provide automatic audit trails without service-layer timestamp management.

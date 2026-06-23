@@ -1,113 +1,116 @@
 ---
 document_type: architecture
 summary: >-
-  **q-goal** is a TypeScript-dominant monorepo structured around two separate
-  workspace systems:
-last_updated: '2026-06-18T21:06:25.817Z'
+  q-goal is a unified npm workspaces monorepo combining TypeScript (Bun-managed)
+  and Python (uv-managed) workspaces in a single repository. The structure
+  separ...
+last_updated: '2026-06-23T03:08:58.598Z'
 tags:
   - architecture
   - topology
   - typescript
   - react
-  - hono
+  - tanstack-router
 ---
 # Architecture
 
 ## Monorepo / Repository Shape
 
-**q-goal** is a TypeScript-dominant monorepo structured around two separate workspace systems:
+q-goal is a unified npm workspaces monorepo combining TypeScript (Bun-managed) and Python (uv-managed) workspaces in a single repository. The structure separates application services (`apps/*`), shared libraries (`packages/*`), and Python microservices at the root level.
 
-- **JavaScript/TypeScript workspace**: managed by Bun and npm workspaces, with applications in `apps/*` (web frontend, server backend) and shared packages in `packages/*` (auth config, database ORM, UI component library).
-- **Python workspace**: managed by uv, with CLI packages for data pipelines (etl, genai) isolated under separate `pyproject.toml` files to avoid version conflicts with the JS toolchain.
+| Workspace | Path | Type | Language | Role |
+| --------- | ---- | ---- | -------- | ---- |
+| Web | `apps/web` | frontend | TypeScript | React 19 SPA with TanStack Router |
+| Server | `apps/server` | backend | TypeScript | Hono REST API gateway |
+| GenAI | `genai/` | backend | Python | FastAPI + LangGraph for AI/ML workloads |
+| ETL | `etl/` | cli | Python | Stub CLI for future data pipelines |
+| Auth | `packages/auth` | library | TypeScript | Better-Auth configuration and exports |
+| DB | `packages/db` | library | TypeScript | Drizzle ORM schema and client |
+| UI | `packages/ui` | library | TypeScript | React component library with Base UI |
 
-The monorepo uses Bun as the primary package manager for the TypeScript portion and Docker Compose to orchestrate the full local stack (frontend, backend, and PostgreSQL).
-
-| Workspace | Path | Type | Purpose |
-| --------- | ---- | ---- | ------- |
-| web | `apps/web` | Frontend application | React 19 + TanStack Router SPA |
-| server | `apps/server` | Backend application | Hono REST API + auth/DB integration |
-| auth | `packages/auth` | Shared library | Better-Auth configuration |
-| db | `packages/db` | Shared library | Drizzle ORM schema + database client |
-| ui | `packages/ui` | Shared library | Reusable React UI components |
-| etl | `etl/` | Python CLI | Data pipeline orchestration |
-| genai | `genai/` | Python CLI | AI services and integrations |
-| postgres | (Docker Compose) | Database | PostgreSQL OLTP store |
+The monorepo uses npm workspaces as the primary tool for TypeScript packages and maintains separate dependency management for Python via `pyproject.toml`. All JavaScript/TypeScript services import shared packages using the `@q-goal/<name>` alias (never relative paths), ensuring clean boundaries and enabling independent versioning.
 
 ## Service Inventory
 
-| Service | Type | Language | Port | Role |
-| ------- | ---- | -------- | ---- | ---- |
-| [[web]] | Frontend | TypeScript | 3001 | React 19 single-page application with TanStack Router |
-| [[server]] | Backend | TypeScript | 3000 | Hono REST API, session middleware, AI SDK integration |
-| [[auth]] | Library | TypeScript | — | Better-Auth session & user management, exported config |
-| [[db]] | Library | TypeScript | — | Drizzle ORM schema definitions, client, migrations |
-| [[ui]] | Library | TypeScript | — | Shared React components (buttons, forms, layout primitives) |
-| [[etl]] | CLI | Python 3.13 | — | Data extraction and transformation pipeline runner |
-| [[genai]] | CLI | Python 3.13 | — | AI model integrations and batch operations |
-| postgres | Database | PostgreSQL | 5433 | Operational data store (OLTP) |
+| Service ID | Name | Type | Language | Port | Role |
+| ---------- | ---- | ---- | -------- | ---- | ---- |
+| [[web]] | Web Application | Frontend | TypeScript 6.x | 3001 | React 19 + TanStack Router SPA |
+| [[server]] | API Server | Backend | TypeScript 6.x | 3000 | Hono 4.8.2 REST API gateway |
+| [[genai]] | GenAI Backend | Backend | Python 3.13 | 8002 | FastAPI 0.137 + LangGraph for AI pipelines |
+| [[etl]] | ETL CLI | CLI | Python 3.13 | — | Stub Python CLI for future ETL tasks |
+| [[auth]] | Authentication Library | Library | TypeScript 6.x | — | Better-Auth 1.6.11 session config |
+| [[db]] | Database Library | Library | TypeScript 6.x | — | Drizzle ORM 0.45.1 schema + client |
+| [[ui]] | UI Component Library | Library | TypeScript 6.x | — | React 19 + Base UI 1.0.0 components |
 
 ## Service Communication
 
-Inter-service dependencies flow through package imports and HTTP requests:
+**Browser → [[web]]**: HTTP requests from user agents routed by TanStack Router to client-side handlers.
 
-- **web → server**: REST API calls over HTTP (unencrypted in dev, TLS in production). Requests for authentication state, data queries, and AI inference endpoints.
-- **web → ui**: Import shared components (`@q-goal/ui`) at build time; no runtime call.
-- **server → auth**: Imports Better-Auth configuration (`@q-goal/auth`) to validate session cookies and manage user sessions.
-- **server → db**: Imports Drizzle ORM client and schemas (`@q-goal/db`) to query PostgreSQL.
-- **server → postgres**: TCP connection over port 5433 (local) or Postgres network alias (Docker) for all data operations.
-- **etl, genai ↔ external APIs**: Direct HTTP calls to external AI services and data sources (e.g., Google AI SDK, third-party data warehouses).
+**[[web]] → [[server]]**: REST API calls from React components to the Hono API gateway (same-origin on localhost:3000 or production API endpoint). Includes authentication via session cookies or Authorization header.
+
+**[[server]] → [[db]]**: All data access funneled through the Drizzle ORM client exported from `@q-goal/db`, ensuring type-safe parameterized queries against PostgreSQL.
+
+**[[server]] → [[auth]]**: Session validation middleware extracts and verifies tokens from request cookies/headers using the Better-Auth session schema. User context attached to request handler for authorization checks.
+
+**[[genai]] → PostgreSQL**: Direct database connections via Drizzle client for storing and retrieving embeddings, match metadata, and pipeline state. Uses same schema as [[server]].
+
+**[[genai]] → External LLM APIs**: Outbound HTTPS calls to Google Generative AI and OpenAI for model inference. API credentials managed via environment variables.
+
+**[[server]] → [[genai]]**: (Not determined by analysis)
 
 ## External Integrations
 
-| Integration | Type | In-Repo Client | Auth | Notes |
-| ----------- | ---- | -------------- | ---- | ----- |
-| Google AI SDK (`@ai-sdk/google`) | LLM inference | `apps/server` (imports directly) | API key via env var | Used for AI endpoint responses on backend |
-| AI SDK React (`@ai-sdk/react`) | Client-side AI hooks | `apps/web` (imported directly) | Token passed from backend | Streaming responses to UI |
+| Vendor | Purpose | Client Path | Auth Mechanism | Environments |
+| ------ | ------- | ----------- | --------------- | ------------ |
+| Google Generative AI | LLM inference for face-matching and enrichment pipelines | `genai/src/genai/` | API key (env var) | dev, staging, production |
+| OpenAI | Alternative LLM provider for generation tasks | `genai/src/genai/` | API key (env var) | dev, staging, production |
 
-## Authentication & Authorization
+## Authentication & Authorisation
 
-**Authentication Flow:**
-Better-Auth manages the complete session lifecycle. When a user logs in, the auth package (packages/auth) stores session tokens in PostgreSQL tables and issues session cookies. The server middleware on every protected route verifies that the session cookie is valid and has not expired. If valid, the session context is attached to the request; otherwise, the request is rejected or redirected to login.
+Authentication uses Better-Auth 1.6.11 configured centrally in [[auth]]. The flow is:
 
-**Session Storage:**
-- **User table**: Contains user identity (email, name, profile).
-- **Session table**: Tracks active sessions with `userId`, `token`, and `expiresAt` timestamps.
-- **Token shape**: Opaque session token (generated and validated by Better-Auth); cookie-based transport in HTTP requests.
-
-**Authorization:**
-Role-based access control (RBAC) or permission-based authorization is not yet configured. When implemented, the pattern will be: attach `roles` or `permissions` fields to the User table, check them in route handlers before passing requests to service logic.
+1. **Session Minting**: User submits credentials (email/password or OAuth provider) to [[server]] authentication endpoint.
+2. **Token Generation**: Better-Auth creates a signed session token stored in HTTP-only cookies and (for API clients) in Authorization headers.
+3. **Middleware Validation**: [[server]] middleware intercepts each request, extracts the session token from cookies or headers, and validates it against the Better-Auth session schema in PostgreSQL.
+4. **Request Context**: On valid session, `req.user` is populated with authenticated user attributes (id, role, email, etc.) and attached to the handler context.
+5. **Authorization Checks**: Endpoints inspect `req.user.role` or other attributes and return 401 (unauthenticated) or 403 (forbidden) as needed.
+6. **Client-Side Protection**: [[web]] maintains client-side auth state via the Better-Auth client library, checking session validity before rendering protected routes. Invalid sessions redirect to login.
 
 ## Request Lifecycle
 
-**Typical authenticated API request (e.g., fetch user posts):**
+**Common Browser Request (Authenticated User)**
 
-1. **Browser (web)**: User clicks a link; TanStack Router navigates to `/posts`.
-2. **React component** (apps/web): Component mounts and calls `fetch('/api/posts')` with the session cookie attached (automatic).
-3. **Hono middleware** (apps/server): Request arrives at POST `/api/posts` handler; middleware extracts session cookie.
-4. **Auth validation** (packages/auth): Middleware calls Better-Auth to validate cookie against postgres session table.
-5. **Session context**: If valid, request is decorated with `userId` from session.
-6. **Database query** (packages/db): Handler constructs a Drizzle query (e.g., `db.select().from(posts).where(eq(posts.userId, userId))`).
-7. **PostgreSQL**: Query executes; rows returned.
-8. **Response**: Hono serializes result to JSON and sends to browser.
-9. **React state**: web receives JSON, updates component state, re-renders.
+1. User navigates in [[web]] SPA; TanStack Router matches the URL and loads the route component.
+2. React component calls a server API function (e.g., `fetch('/api/goals')`) with the session cookie automatically attached by the browser.
+3. Request arrives at [[server]] Hono handler on port 3000.
+4. Better-Auth middleware in [[server]] extracts session token from cookie and validates it against PostgreSQL via Drizzle.
+5. If valid, `req.user` is hydrated; if invalid, handler returns 401 Unauthorized.
+6. Authenticated handler queries [[db]] (Drizzle ORM) to fetch user's goals from PostgreSQL.
+7. [[server]] serializes the response as JSON and sends it back to [[web]].
+8. React component receives the response, updates local state, and re-renders.
+
+**GenAI Pipeline Request**
+
+1. [[server]] endpoint receives a file upload or trigger to start a face-matching pipeline.
+2. [[server]] enqueues the job or calls [[genai]] FastAPI endpoint on port 8002 with task parameters.
+3. [[genai]] FastAPI handler orchestrates a LangGraph workflow, invoking `parse_pdf` and other ETL steps in `src/genai/etl/`.
+4. LangGraph calls external LLM APIs (Google Generative AI, OpenAI) for inference and embeddings.
+5. [[genai]] persists embeddings and match metadata to PostgreSQL via Drizzle.
+6. [[genai]] returns job status or results to [[server]]; [[web]] polls or subscribes for updates.
 
 ## Data Architecture
 
-**PostgreSQL** is the single authoritative operational data store, running on port 5433 locally (containerized via Docker Compose).
+**PostgreSQL** (remapped to host port 5433 to avoid collision with local Postgres.app on 5432) is the single operational data store.
 
-**Schema Management:**
-- Drizzle ORM in `packages/db` defines all schemas in TypeScript (e.g., `src/schema/auth.ts`, `src/schema/posts.ts`).
-- No separate migrations folder; Drizzle introspects schema changes and applies them automatically via `bun run db:push`.
-- Both `web` and `server` import the same shared Drizzle client (`@q-goal/db`), ensuring a single source of truth for data contracts.
+**Schema Management**: Drizzle ORM stores all table definitions in `packages/db/src/schema/` organized by domain:
+- `auth.ts` — Better-Auth tables (users, sessions, accounts, verificationTokens)
+- Application domain tables (goals, matches, embeddings, etc.)
 
-**Local Development:**
-- Start Postgres in Docker: `bun run db:start` (host port 5433).
-- Apply schema: `bun run db:push`.
-- Postgres persists data to a Docker volume; no schema reset between runs unless volume is deleted.
+**Migrations**: Code-first via Drizzle Kit. Running `bun run --filter @q-goal/db db:push` applies schema changes. Schema is the source of truth; no hand-rolled SQL.
 
-**Python CLIs (etl, genai):**
-- May read from or write to PostgreSQL via direct `psycopg` or similar drivers (not yet in scope).
-- Can also consume external data sources and load results into Postgres via uv-managed dependencies.
+**Client Access**: All services ([[server]], [[genai]]) import the Drizzle client from `@q-goal/db/src/index.ts`, ensuring schema consistency and preventing drift. Parameterized queries mitigate SQL injection.
+
+**Local Development**: Docker Compose spins up a fresh PostgreSQL container on startup; persistent volumes store data across restarts.
 
 ## Deployment Topology
 
@@ -115,67 +118,61 @@ Role-based access control (RBAC) or permission-based authorization is not yet co
 
 ## Local Development
 
-**Full Stack (Docker Compose):**
-```bash
-bun install
-bun run docker:up      # Builds and starts web, server, postgres
-bun run db:push        # Apply migrations (inside Docker)
-# Visit http://localhost:3001 (web) and http://localhost:3000/api (server)
+**Full Docker Stack**:
+```
+bun run docker:up
+```
+Builds and starts [[web]] (port 3001), [[server]] (port 3000), and PostgreSQL (host port 5433) in isolated containers. Use this workflow when you want containers to manage service dependencies.
+
+**Local with Hot Reload**:
+```
+bun run db:start      # starts postgres only in docker
+bun run dev           # starts web + server in dev mode
+uv run genai-api      # starts genai service (port 8002) in a separate terminal
+```
+Allows rapid iteration with live reloading for TypeScript and Python code while PostgreSQL runs in Docker.
+
+**Database Migrations**:
+```
+bun run db:push       # applies schema changes from packages/db
 ```
 
-**Local Hot Reload (without Docker):**
-```bash
-bun install
-bun run db:start       # Start Postgres container only (host port 5433)
-bun run db:push        # Apply migrations
-bun run dev            # Start web (3001) + server (3000) in dev mode
+**Python Dependency Sync**:
+```
+uv sync               # resolves genai and etl dependencies
 ```
 
-**Python:**
-```bash
-uv sync                # Sync etl + genai dependencies
-uv run etl             # Execute ETL CLI
-uv run genai           # Execute GenAI CLI
-uv run ruff check --fix  # Lint and auto-fix
+**Linting & Formatting**:
+- TypeScript: `oxlint && oxfmt --write`
+- Python: `uv run ruff check --fix && uv run ruff format`
+
+**Type Checking**:
+```
+bun run check-types   # TypeScript across all workspaces
 ```
 
 ## Automation & CI
 
-**Primary Interface:** npm scripts in root `package.json` and per-service manifests.
+**Package Manager Scripts**: npm scripts defined in `package.json` (root and per-package) orchestrate builds, dev servers, and migrations via Bun. Key entry points:
+- `bun run docker:up` — full stack in Docker
+- `bun run dev` — [[web]] + [[server]] with hot reload
+- `bun run db:push` — Drizzle migrations
+- `bun run check-types` — TypeScript validation
 
-**Key Commands:**
-- `bun run dev`: Start web + server in dev mode.
-- `bun run docker:up`: Build and run full Docker Compose stack.
-- `bun run db:start` / `bun run db:push`: PostgreSQL setup.
-- `bun run check-types`: Type-check all TypeScript services.
+**Python CLI**: uv manages Python dependency resolution and task execution:
+- `uv run etl` — [[etl]] CLI stub
+- `uv run genai-api` — [[genai]] FastAPI server
+- `uv run genai-pipeline` — face-matching WC2026 pipeline
 
-**CI Hints (Docker Compose):**
-Docker Compose configuration includes orchestration for containerized deployments:
-- `docker compose build`: Build all service images.
-- `docker compose up -d --build`: Start services with fresh builds.
-- `docker compose logs -f`: Stream logs from all services.
+**Linting & Formatting**:
+- JavaScript/TypeScript: Oxlint (Rust-based, faster than ESLint) with Oxfmt
+- Python: Ruff for linting and formatting
 
-**Python Automation:**
-- `uv run ruff check --fix`: Lint and auto-fix etl + genai.
-- `uv run ruff format`: Format Python code.
-- `uv add --package <service> <pkg>`: Add dependency to a specific Python package.
+**CI Provider**: (not determined by analysis)
 
 ## Coupling Hotspots
 
-High-connectivity nodes that may warrant architectural attention:
-
-**Hub nodes** (most inbound + outbound connections):
-- `apps/web/src/components/sign-up-form.tsx::SignUpForm` (degree 37): Form component used across multiple pages; changes affect sign-up flow.
-- `apps/web/src/components/sign-in-form.tsx::SignInForm` (degree 30): Authentication entry point; tightly coupled to auth state.
-- `packages/ui/src/lib/utils.ts::cn` (degree 24): Classname utility (likely Tailwind helper); used everywhere for styling.
-- `apps/web/src/components/user-menu.tsx::UserMenu` (degree 18): Session-aware UI component; bridges auth state and UI.
-- `apps/web/src/components/mode-toggle.tsx::ModeToggle` (degree 15): Theme switcher; widely referenced.
-
-**Bridge nodes** (highest betweenness centrality; lie on shortest paths between many node pairs):
-- `apps/web/src/components/user-menu.tsx::UserMenu` (score 0.00119)
-- `packages/ui/src/lib/utils.ts::cn` (score 0.00109)
-- `apps/web/src/components/header.tsx::Header` (score 0.000989)
-- `apps/web/src/components/mode-toggle.tsx::ModeToggle` (score 0.000757)
-- `apps/web/src/components/sign-in-form.tsx::SignInForm` (score 0.000698)
-
-Changes to these components should be tested carefully, as they connect multiple flows; refactoring should preserve backward compatibility with dependent consumers.
+- `genai/src/genai/etl/enrich.py::parse_pdf` (Function, hub score 61) — central PDF parsing step for the face-matching pipeline; called by multiple LangGraph workflow branches.
+- `genai/src/genai/core/db.py::get_conn` (Function, bridge score 0.000073) — bridges [[genai]] to PostgreSQL; all database access routes through this factory.
+- `apps/web/src/components/user-menu.tsx::UserMenu` (Function, bridge score 0.00007) — widely composed header/layout component; refactors ripple across page layouts.
+- `packages/ui/src/lib/utils.ts::cn` (Function, hub score 0.000064) — class-name merging utility used across all Base UI component compositions; changes affect styling consistency.

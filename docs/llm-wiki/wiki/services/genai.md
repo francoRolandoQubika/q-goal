@@ -1,130 +1,83 @@
 ---
 document_type: service
 summary: >-
-  genai is a Python FastAPI service (port 8002) for World Cup 2026 face matching
-  and an office quiz. It owns an ETL pipeline (scrape → crop → embed → db →
-  enrich) that builds a local SQLite database of player photos and embeddings
-  using DeepFace, CLIP, and InsightFace. At runtime it exposes REST endpoints
-  for face matching and a LangGraph-backed quiz agent.
-last_updated: '2026-06-22T00:00:00.000Z'
+  The GenAI service is a dedicated FastAPI backend for compute-intensive
+  generative AI and face-matching workflows. It runs LangGraph agents for quiz
+  generatio...
+last_updated: '2026-06-23T20:00:00.000Z'
 tags:
   - service
   - python
+  - backend
   - fastapi
-  - cli
-  - ai
 service_id: genai
 ---
-# genai
+# GenAI Backend
 
 ## Purpose
 
-genai is a standalone Python FastAPI service that powers two features for the WC2026 office experience:
-
-1. **Face match** — upload a photo, get the player who looks most like you (3 embedding models)
-2. **Office quiz** — 4 Spanish questions → LLM assigns a "dream office team" of WC2026 players
-
-It is entirely self-contained: its own SQLite database (`players.db`), its own embedding matrices (`.npy` files), and its own ETL pipeline to build them from scratch.
+The GenAI service is a dedicated FastAPI backend for compute-intensive generative AI and face-matching workflows. It runs LangGraph agents for quiz generation, handles face detection and embedding computation, and manages match ranking against pre-indexed player profiles. Separated from the lightweight [[server]] to isolate ML/embedding workloads and allow independent scaling and Python-specific dependency management.
 
 ## Public API / Surface
 
-**CLI commands (via `uv run`):**
-- `uv run genai-pipeline` — Run the full ETL pipeline (see ETL Pipeline section)
-- `uv run genai-api` — Start the FastAPI server on port 8002
+**Face Matching**
+- `POST /match` — Upload a photo and receive top-K similar World Cup 2026 player matches. Accepts `UploadFile` (photo), query params `top` (1–20, default 3) and `model` (facenet | clip | insightface, default clip). Returns `MatchResponse` with `PlayerMatch` list including player name, similarity score, and profile URL.
 
-**HTTP endpoints (port 8002):**
-- `POST /match` — Upload image → returns top-N matching players
-- `GET /players` — List all players in the DB
-- `GET /faces/{player_id}` — Serve a cropped face image
-- `POST /quiz/start` — Start a quiz session → returns first question
-- `POST /quiz/answer` — Submit answer → returns next question or final team
+**Quiz**
+- `POST /quiz/start` — Initialize a quiz session. Returns session ID and first question.
+- `POST /quiz/{session_id}/answer` — Submit an answer. Returns feedback and next question or session completion state.
+
+Other endpoints as defined in `genai/src/genai/api.py`. Runs on port 8002 and can be invoked by [[server]] via HTTP or run standalone for the ETL pipeline.
 
 ## Internal Architecture
 
-```
-genai/src/genai/
-├── api.py              FastAPI app, all HTTP routes
-├── pipeline.py         ETL orchestrator (5 steps, skip logic, --force)
-├── core/
-│   ├── config.py       .env loader; DATA_DIR = genai/ root; STATS_PDF env var
-│   └── db.py           SQLite: players table, get_conn(), get_all_embeddings()
-├── etl/
-│   ├── scraper.py      FIFA API → players/{team_slug}/{player}.jpg
-│   ├── crop.py         DeepFace + rembg → faces/{team_slug}/{player}.jpg (300×300, green bg)
-│   ├── embeddings.py   Builds embeddings*.npy for facenet / clip / insightface
-│   └── enrich.py       pdfplumber → adds position/dob/club/height/caps/goals to players.db
-├── matching/
-│   └── engine.py       Cosine similarity across all 3 embedding models
-└── agent/
-    ├── questions.py    Quiz themes and OUTPUT_SLOTS
-    ├── nodes.py        LangGraph nodes (dynamic LLM question generation)
-    └── graph.py        LangGraph compile, start_session(), submit_answer()
-```
+FastAPI application with Pydantic BaseModel request/response schemas. Startup event pre-loads player embedding matrices (FacenetV2, CLIP, InsightFace) into memory for fast inference. LangGraph agent integration manages quiz state and question generation via ChatOpenAI. File uploads temporarily stored via Python's `tempfile` module for preprocessing before embedding computation. No persistent session storage—quizzes held in memory (`_sessions` dict) for the lifetime of the server process.
 
-**Key files:**
-- `DATA_DIR` = `genai/` repo root (set in `core/config.py` via `Path(__file__).parents[3]`)
-- `players.db` — SQLite, gitignored, rebuilt by pipeline
-- `embeddings.npy`, `embeddings_clip.npy`, `embeddings_insightface.npy` — gitignored
-- `metadata.json` — face index written by embeddings step (facenet pass)
+## Request Lifecycle
 
-## ETL Pipeline
+**Face Matching Flow:**
+1. Receive file upload (POST /match with UploadFile)
+2. Preprocess user photo (resize, normalize)
+3. Compute embedding via selected model (facenet/clip/insightface)
+4. Compute cosine similarity against pre-loaded player embedding matrix
+5. Sort results, return top-K matches with scores and metadata
 
-Run with `uv run genai-pipeline [--steps …] [--models …] [--stats-pdf /path] [--force]`.
-
-| Step | Module | Output |
-|------|--------|--------|
-| scrape | `genai.etl.scraper` | `players/{team_slug}/*.jpg` — 48 squads, ~1 200 photos |
-| crop | `genai.etl.crop` | `faces/{team_slug}/*.jpg` — 300×300, green background |
-| embed | `genai.etl.embeddings` | `embeddings*.npy` + `metadata.json` |
-| db | `genai.core.db.get_conn` | `players.db` (SQLite) |
-| enrich | `genai.etl.enrich` | Adds stats columns from `statsFifa.pdf` |
-
-**Skip logic:** each step is skipped if its output already exists (override with `--force`).
-
-**`slugify()` in scraper.py:** strips Unicode accent marks via NFD normalization before producing folder names — required because DeepFace rejects image paths containing non-ASCII characters.
+**Quiz Flow:**
+1. Receive quiz start request (POST /quiz/start)
+2. Initialize LangGraph agent state with player context
+3. ChatOpenAI generates opening question JSON (system prompt + player metadata)
+4. Store session in `_sessions`, return session ID and question
+5. On answer submission, invoke agent node for feedback, advance state
+6. Return next question or completion summary
 
 ## Data Layer
 
-**SQLite schema (`players.db`):**
-```sql
-players(
-  id INTEGER PK, name TEXT, team TEXT, face_path TEXT,
-  embedding BLOB,      -- FaceNet512 float32 bytes
-  position TEXT,       -- GK/DF/MF/FW  (added by enrich step)
-  dob TEXT,            -- DD/MM/YYYY
-  club TEXT,
-  height_cm INTEGER,
-  caps INTEGER,
-  goals INTEGER
-)
-```
-
-No PostgreSQL dependency — genai uses SQLite only and is fully independent of the `@q-goal/db` package.
+- **Embedding matrices** — Pre-computed player embeddings (facenet, clip, insightface) loaded at startup into NumPy arrays; enables O(1) lookup and batched similarity computation.
+- **Quiz sessions** — Ephemeral in-memory dictionary (`_sessions`); each entry holds LangGraph agent state, current question, and answer history.
+- **Player metadata** — PostgreSQL via `genai/core/db.py`; stores player profiles, embeddings references, and quiz history for audit.
 
 ## Configuration
 
-All env vars go in `genai/.env` (gitignored). Loaded at import time by `core/config.py` via python-dotenv.
+| Variable | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | OpenAI API key for ChatOpenAI LLM in quiz generation |
+| `DATABASE_URL` | PostgreSQL connection string for metadata and embeddings |
+| `MODEL_SELECTION` | Default embedding model (clip, facenet, insightface) |
+| `STATS_PDF` | Path to the FIFA player stats PDF used by the pipeline. Defaults to `genai/statsFifa.pdf` (committed to the repo); `uv run genai-pipeline` works without extra flags. |
 
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | Required for the quiz LangGraph agent |
-| `STATS_PDF` | Absolute path to `statsFifa.pdf` for the enrich step |
-| `API_PORT` | FastAPI port (default: 8002) |
+## Integrations
 
-Frontend must set `VITE_GENAI_URL=http://localhost:8002`.
-
-## Embedding Models
-
-| Model | File | Dim | Notes |
-|-------|------|-----|-------|
-| FaceNet512 | `embeddings.npy` | 512 | Identity verification; canonical pass writes `metadata.json` |
-| CLIP ViT-L/14 | `embeddings_clip.npy` | 768 | Default for `/match` — best "lookalike" feel |
-| InsightFace buffalo_l | `embeddings_insightface.npy` | 512 | ArcFace, L2-normalised |
+- **[[PostgreSQL]]** (port 5433) — Stores player metadata, embeddings vectors, quiz history, and match audit logs. Connected via `genai/core/db.py` using SQLAlchemy or raw SQL.
+- **OpenAI API** — `langchain-openai` integration for quiz question generation via ChatOpenAI. Called during quiz initialization and answer evaluation.
+- **Google Generative AI** (optional) — `langchain-google` can be substituted for OpenAI; configured via environment variable.
+- **File Processing** — Temporary storage via Python `tempfile` for user-uploaded photos during preprocessing.
 
 ## Service-Specific Patterns
 
-- **Green background (#00B140)** on all face crops — ensures models compare faces, not backgrounds
-- **CLIP is the default match model** — better lookalike results than identity models
-- **LangGraph interrupt pattern** — each quiz `session_id` = LangGraph `thread_id`; state lives in `MemorySaver` (resets on server restart)
-- **Dynamic question generation** — LLM creates fresh questions each session from 4 themes
-- **Progressive PDF parsing** — `enrich.py` detects column positions dynamically from the PDF header row
+**Startup Embedding Preload** — On application startup, `@app.on_event("startup")` loads all player embedding matrices into memory. Eliminates per-request disk I/O and allows vectorized similarity computation.
+
+**In-Memory Session State** — LangGraph agent state persisted in-process during quiz lifetime; no database round-trip per turn. Sessions cleared on server restart (acceptable for demo/pilot deployments; production use would persist to Redis or PostgreSQL).
+
+**Pydantic Request/Response Models** — All endpoints use Pydantic BaseModel for validation and OpenAPI schema auto-generation. Client can deserialize typed JSON responses.
+
+**Model Polymorphism** — Face-matching endpoint accepts model parameter to select embedding algorithm at runtime, enabling A/B testing and fallback logic without redeployment.
