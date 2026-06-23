@@ -4,7 +4,7 @@ summary: >-
   The web service is a React 19 single-page application (SPA) that provides the
   primary user interface for q-goal. It serves as the frontend entry point for
   us...
-last_updated: '2026-06-23T03:08:58.598Z'
+last_updated: '2026-06-23T05:00:00.000Z'
 tags:
   - service
   - typescript
@@ -15,7 +15,7 @@ service_id: web
 ---
 # Web
 
-The web service is a React 19 single-page application (SPA) that provides the primary user interface for q-goal. It serves as the frontend entry point for user authentication (email/password and Google OAuth), navigation across feature pages, and interaction with backend services. The app runs on port 3001 and communicates with the server (port 3000) for API requests and the genai service (port 8002) for specialized AI features like face matching.
+The web service is a React 19 single-page application (SPA) that provides the primary user interface for q-goal. It serves as the frontend entry point for user authentication (Google OAuth only), navigation across feature pages, and interaction with backend services. The app runs on port 3001 and communicates with the server (port 3000) for API requests and the genai service (port 8002) directly for quiz and face-matching workflows.
 
 ## Public API / Surface
 
@@ -24,9 +24,10 @@ The web service has no HTTP endpoints of its own; it is a browser-based SPA deli
 | Route | Purpose |
 | ----- | ------- |
 | `/` | Root/home page with navigation |
-| `/sign-in` | Email/password and Google OAuth signin |
-| `/sign-up` | User registration |
+| `/login` | Google OAuth sign-in (redirects to `/quiz` on success) |
 | `/ai` | Real-time AI chat interface with streaming responses |
+| `/_auth/quiz` | Auth-protected quiz chat interface (calls genai `/quiz/start` + `/quiz/answer`) |
+| `/_auth/dashboard` | Auth-protected results dashboard (displays quiz assignments) |
 | Other routes | (determined by route files in `src/routes/`) |
 
 Client-side navigation is handled entirely by TanStack Router; no server-side routing is required. The app exports no programmatic library surface—it is consumed as a built application artifact delivered to browsers.
@@ -63,7 +64,7 @@ Typical user interaction flow:
 8. **Re-render** → Component state updates → UI reflects new data
 
 **Example: Sign-in**  
-User fills `/sign-in` form → `SignInForm` submits POST to `/api/auth/signIn` → server (Better-Auth handler) validates → returns session cookie → client auth state updates → redirect to home.
+User visits `/login` → clicks "Sign in with Google" → `authClient.signIn.social({ provider: "google" })` redirects to Google OAuth → callback returns session cookie via Better-Auth handler on server → client auth state updates → redirect to `/quiz`.
 
 **Example: AI chat**  
 User types message on `/ai` → `useChat` hook sends POST to `/ai` with streaming request → server runs `streamText()` with Google Gemini → streams back to client via ReadableStream → UI appends tokens to chat.
@@ -83,7 +84,7 @@ All durable state is owned by the server and PostgreSQL database; web is statele
 | Environment Variable | Purpose | Source |
 | -------------------- | ------- | ------ |
 | `VITE_SERVER_URL` | Base URL for server API calls (e.g., `http://localhost:3000`) | `apps/web/.env` |
-| `VITE_GENAI_URL` | Base URL for genai service calls (optional, if direct calls used) | `apps/web/.env` |
+| `VITE_GENAI_URL` | Base URL for genai service direct calls (`/quiz/start`, `/quiz/answer`, `/faces/:id`) | `apps/web/.env` |
 
 The prefix `VITE_` indicates these are Vite build-time variables and are embedded into the built assets. No environment variables are read at runtime.
 
