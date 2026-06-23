@@ -4,7 +4,7 @@ summary: >-
   The web service is a React 19 single-page application (SPA) that provides the
   primary user interface for q-goal. It serves as the frontend entry point for
   us...
-last_updated: '2026-06-23T06:00:00.000Z'
+last_updated: '2026-06-23T19:57:02.000Z'
 tags:
   - service
   - typescript
@@ -23,11 +23,11 @@ The web service has no HTTP endpoints of its own; it is a browser-based SPA deli
 
 | Route | Purpose |
 | ----- | ------- |
-| `/` | Root/home page with navigation |
-| `/login` | Google OAuth sign-in (redirects to `/quiz` on success) |
+| `/` | Entry redirector — `beforeLoad` routes to `/login` (no session), `/dashboard` (session + saved result), or `/quiz` (session, no result) |
+| `/login` | Google OAuth sign-in (`callbackURL` → `/`, which then redirects based on session + saved result) |
 | `/ai` | Real-time AI chat interface with streaming responses |
-| `/_auth/quiz` | Auth-protected quiz chat interface (calls genai `/quiz/start` + `/quiz/answer`) |
-| `/_auth/dashboard` | Auth-protected results dashboard — reads TanStack Router location state (assignments, outro, role) from quiz completion; renders team-themed player cards; redirects to `/quiz` if no state present |
+| `/_auth/quiz` | Auth-protected quiz chat interface (calls genai `/quiz/start` + `/quiz/answer`); `loader` redirects to `/dashboard` if a saved result already exists; on completion persists the result via `POST /api/quiz-result` then navigates to `/dashboard` |
+| `/_auth/dashboard` | Auth-protected results dashboard — `loader` fetches the persisted quiz result from the server (`GET /api/quiz-result`); redirects to `/quiz` if none; renders team-themed player cards from loader data |
 | Other routes | (determined by route files in `src/routes/`) |
 
 Client-side navigation is handled entirely by TanStack Router; no server-side routing is required. The app exports no programmatic library surface—it is consumed as a built application artifact delivered to browsers.
@@ -109,6 +109,6 @@ The web app does not directly call external services; all external integrations 
 
 **Shared UI library:** Components import from `packages/ui` (Base UI + Tailwind CVA variants) to ensure visual consistency and reduce duplication across apps.
 
-**TanStack Router location state for cross-route results:** Quiz assignments, outro, and role are passed from `/_auth/quiz` to `/_auth/dashboard` via `navigate({ to: "/dashboard", state: ... })` — no URL params or sessionStorage. The dashboard reads state with `useRouterState`; if state is absent (direct nav or refresh) it redirects to `/quiz`.
+**Server-persisted quiz result + loader-backed routing:** The completed quiz result (role, outro, assignments) is persisted to the server (`/api/quiz-result`, keyed by user) rather than passed via router location state. `/_auth/quiz` and `/_auth/dashboard` declare a route `loader` that fetches the result with `credentials: "include"`; the dashboard renders from `useLoaderData` and redirects to `/quiz` when none exists, so the result survives refresh/logout. `/` is an entry redirector (`beforeLoad`) that routes to `/login`, `/quiz`, or `/dashboard` based on session + saved result. On save failure the quiz page keeps the generated figurita visible with a retry rather than navigating away.
 
 **Environment isolation:** Each `.env` file is app-scoped; web does not share configuration with server or other packages via environment files.

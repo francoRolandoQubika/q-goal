@@ -4,7 +4,7 @@ summary: >-
   The server is a lightweight REST API backend built on Hono 4.8.2 that runs on
   port 3000. It serves as the primary data layer for the [[web]] frontend,
   handli...
-last_updated: '2026-06-23T03:08:58.598Z'
+last_updated: '2026-06-23T19:57:02.000Z'
 tags:
   - service
   - typescript
@@ -22,6 +22,7 @@ The server is a lightweight REST API backend built on Hono 4.8.2 that runs on po
 
 - `POST /api/auth/*` — Better-Auth passthrough routes for signup, signin, signout, OAuth callback, and session management
 - `POST /ai` — Streaming text endpoint that accepts a message and returns LLM-generated responses as a UIMessageStreamResponse
+- `GET/POST/DELETE /api/quiz-result` — per-user quiz-result persistence. All three require a valid Better-Auth session (`auth.api.getSession`) and return `401` with no DB read/write otherwise. `POST` Zod-validates the body and upserts on `userId`; reads/deletes are scoped to the caller. Backed by the `quiz_result` table in [[db]]. `DELETE` is included in the CORS `allowMethods`.
 - Additional routes and endpoints (not enumerated in codebase analysis)
 
 ## Internal Architecture
