@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@q-goal/ui/components/card";
-import { cn } from "@q-goal/ui/lib/utils";
 import { env } from "@q-goal/env/web";
 import { useState } from "react";
 import type { Assignment } from "../lib/dashboard-types";
@@ -23,11 +22,7 @@ export function PlayerCard({ assignment, accentColor }: PlayerCardProps) {
   return (
     <Card className="border-2" style={{ borderColor: accentColor }}>
       {imgFailed ? (
-        <div
-          className={cn(
-            "w-full aspect-square flex items-center justify-center text-4xl font-bold bg-muted text-muted-foreground",
-          )}
-        >
+        <div className="w-full aspect-square flex items-center justify-center text-4xl font-bold bg-muted text-muted-foreground">
           {initial}
         </div>
       ) : (

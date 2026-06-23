@@ -35,9 +35,11 @@ export function DashboardHeader({ name, avatarUrl, role, team }: DashboardHeader
         <span className="font-semibold text-base leading-none">{name}</span>
         <span className="text-sm opacity-80">{role}</span>
       </div>
-      <span className="ml-auto rounded-full px-3 py-1 text-xs font-medium border border-current opacity-80">
-        {team}
-      </span>
+      {team && (
+        <span className="ml-auto rounded-full px-3 py-1 text-xs font-medium border border-current opacity-80">
+          {team}
+        </span>
+      )}
     </div>
   );
 }

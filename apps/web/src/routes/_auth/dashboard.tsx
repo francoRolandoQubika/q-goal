@@ -59,8 +59,12 @@ function DashboardPage() {
           {state.assignments.length === 0 ? (
             <p className="col-span-full text-center opacity-70">No results yet</p>
           ) : (
-            state.assignments.map((assignment, i) => (
-              <PlayerCard key={i} assignment={assignment} accentColor={theme.accent} />
+            state.assignments.map((assignment) => (
+              <PlayerCard
+                key={assignment.player.id}
+                assignment={assignment}
+                accentColor={theme.accent}
+              />
             ))
           )}
         </div>
