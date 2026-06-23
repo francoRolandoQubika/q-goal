@@ -1,6 +1,7 @@
 import { Button } from "@q-goal/ui/components/button";
 import { Input } from "@q-goal/ui/components/input";
 import { Label } from "@q-goal/ui/components/label";
+import { toast } from "sonner";
 import { useForm } from "@tanstack/react-form";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
@@ -340,9 +341,13 @@ function QuizPage() {
           open={redoOpen}
           onOpenChange={setRedoOpen}
           onConfirm={async () => {
-            await deleteQuizResult();
-            await router.invalidate();
-            setRedoOpen(false);
+            try {
+              await deleteQuizResult();
+              await router.invalidate();
+              setRedoOpen(false);
+            } catch {
+              toast.error("Failed to reset quiz. Please try again.");
+            }
           }}
         />
       </div>

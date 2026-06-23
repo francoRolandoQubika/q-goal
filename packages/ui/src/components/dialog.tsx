@@ -81,7 +81,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
 interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onCancel?: () => void;
   title: string;
   description?: string;

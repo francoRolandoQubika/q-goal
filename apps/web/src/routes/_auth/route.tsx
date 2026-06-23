@@ -20,7 +20,9 @@ function AuthLayout() {
   return (
     <div className="grid grid-rows-[auto_1fr] h-svh overflow-hidden">
       <AppBar />
-      <Outlet />
+      <div className="overflow-y-auto">
+        <Outlet />
+      </div>
     </div>
   );
 }
