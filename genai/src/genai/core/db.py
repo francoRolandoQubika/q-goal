@@ -29,7 +29,13 @@ def _build(conn: sqlite3.Connection):
             name      TEXT NOT NULL,
             team      TEXT NOT NULL,
             face_path TEXT NOT NULL,
-            embedding BLOB NOT NULL
+            embedding BLOB NOT NULL,
+            position  TEXT,
+            dob       TEXT,
+            club      TEXT,
+            height_cm INTEGER,
+            caps      INTEGER,
+            goals     INTEGER
         )
     """)
 
