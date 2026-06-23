@@ -2,20 +2,18 @@ import { Button } from "@q-goal/ui/components/button";
 import { Input } from "@q-goal/ui/components/input";
 import { Label } from "@q-goal/ui/components/label";
 import { useForm } from "@tanstack/react-form";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import z from "zod";
 import { env } from "@q-goal/env/web";
 import type { Assignment } from "../../lib/dashboard-types";
-import { fetchQuizResult, saveQuizResult } from "../../lib/quiz-result";
+import { deleteQuizResult, fetchQuizResult, saveQuizResult } from "../../lib/quiz-result";
+import { RedoQuizDialog } from "../../components/redo-quiz-dialog";
 
 export const Route = createFileRoute("/_auth/quiz")({
   loader: async () => {
     const result = await fetchQuizResult();
-    if (result) {
-      throw redirect({ to: "/dashboard" });
-    }
-    return null;
+    return { alreadyCompleted: !!result };
   },
   component: QuizPage,
 });
@@ -201,7 +199,10 @@ function SaveFailedStep({
 
 function QuizPage() {
   const navigate = useNavigate();
+  const router = useRouter();
+  const { alreadyCompleted } = Route.useLoaderData();
   const [quizState, setQuizState] = useState<QuizState>({ step: "role-input" });
+  const [redoOpen, setRedoOpen] = useState(false);
 
   async function handleRoleSubmit(role: string) {
     setQuizState({ step: "loading-questions" });
@@ -322,6 +323,30 @@ function QuizPage() {
 
   function handleRestart() {
     setQuizState({ step: "role-input" });
+  }
+
+  if (alreadyCompleted && quizState.step === "role-input") {
+    return (
+      <div className="mx-auto w-full max-w-md mt-10 p-6 text-center space-y-4">
+        <h1 className="text-2xl font-bold">You already completed the quiz</h1>
+        <p className="text-muted-foreground">View your figurita or redo the quiz.</p>
+        <div className="flex gap-3 justify-center">
+          <Button onClick={() => navigate({ to: "/dashboard" })}>Go to dashboard</Button>
+          <Button variant="outline" onClick={() => setRedoOpen(true)}>
+            Redo quiz
+          </Button>
+        </div>
+        <RedoQuizDialog
+          open={redoOpen}
+          onOpenChange={setRedoOpen}
+          onConfirm={async () => {
+            await deleteQuizResult();
+            await router.invalidate();
+            setRedoOpen(false);
+          }}
+        />
+      </div>
+    );
   }
 
   if (quizState.step === "role-input") {

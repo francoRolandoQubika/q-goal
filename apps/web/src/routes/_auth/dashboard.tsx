@@ -1,8 +1,10 @@
 import { Button } from "@q-goal/ui/components/button";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import { DashboardHeader } from "../../components/dashboard-header";
 import { PlayerCard } from "../../components/player-card";
-import { fetchQuizResult } from "../../lib/quiz-result";
+import { RedoQuizDialog } from "../../components/redo-quiz-dialog";
+import { deleteQuizResult, fetchQuizResult } from "../../lib/quiz-result";
 
 export const Route = createFileRoute("/_auth/dashboard")({
   loader: async () => {
@@ -30,6 +32,9 @@ const TEAM_COLORS: Record<string, { bg: string; accent: string; text: string }> 
 function DashboardPage() {
   const { session } = Route.useRouteContext();
   const data = Route.useLoaderData();
+  const [redoOpen, setRedoOpen] = useState(false);
+  const router = useRouter();
+  const navigate = useNavigate();
 
   const team = data.assignments[0]?.player.team ?? "";
   const theme = TEAM_COLORS[team.toLowerCase()] ?? TEAM_COLORS.default;
@@ -67,7 +72,19 @@ function DashboardPage() {
         <div className="flex gap-3">
           <Button disabled>Download PNG</Button>
           <Button disabled>Share</Button>
+          <Button variant="outline" onClick={() => setRedoOpen(true)}>
+            Redo quiz
+          </Button>
         </div>
+        <RedoQuizDialog
+          open={redoOpen}
+          onOpenChange={setRedoOpen}
+          onConfirm={async () => {
+            await deleteQuizResult();
+            await router.invalidate();
+            navigate({ to: "/quiz" });
+          }}
+        />
       </div>
     </div>
   );
