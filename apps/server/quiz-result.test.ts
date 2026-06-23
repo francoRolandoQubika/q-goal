@@ -64,7 +64,7 @@ afterAll(async () => {
 });
 
 describe("GET /api/quiz-result — unauthenticated", () => {
-  it("returns 401 and does not read DB", async () => {
+  it("returns 401", async () => {
     const res = await app.request("/api/quiz-result");
     expect(res.status).toBe(401);
   });
@@ -85,13 +85,36 @@ describe("POST /api/quiz-result — unauthenticated", () => {
 });
 
 describe("DELETE /api/quiz-result — unauthenticated", () => {
-  it("returns 401", async () => {
+  it("returns 401 and does not remove an existing row", async () => {
+    const cookie = await getCookie("user-a@test.com", "password123456");
+    await app.request("/api/quiz-result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", cookie },
+      body: JSON.stringify(VALID_BODY),
+    });
+    const before = await db.select().from(quizResult);
+
     const res = await app.request("/api/quiz-result", { method: "DELETE" });
     expect(res.status).toBe(401);
+
+    const after = await db.select().from(quizResult);
+    expect(after.length).toBe(before.length);
   });
 });
 
 describe("POST /api/quiz-result — invalid body", () => {
+  it("returns 400 on malformed JSON", async () => {
+    const cookie = await getCookie("user-a@test.com", "password123456");
+    const res = await app.request("/api/quiz-result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", cookie },
+      body: "this is not json{{{",
+    });
+    expect(res.status).toBe(400);
+    const json = (await res.json()) as { error: string };
+    expect(json.error).toBe("Invalid JSON body");
+  });
+
   it("returns 400 when role is empty", async () => {
     const cookie = await getCookie("user-a@test.com", "password123456");
     const res = await app.request("/api/quiz-result", {
@@ -123,6 +146,36 @@ describe("POST /api/quiz-result — invalid body", () => {
       }),
     });
     expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/quiz-result — upsert overwrites existing row", () => {
+  it("second POST updates the row and GET returns the new values", async () => {
+    const cookie = await getCookie("user-a@test.com", "password123456");
+    const authHeaders = { "Content-Type": "application/json", cookie };
+
+    await app.request("/api/quiz-result", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify(VALID_BODY),
+    });
+
+    const updatedBody = { ...VALID_BODY, role: "striker", outro: "Updated outro" };
+    const secondPost = await app.request("/api/quiz-result", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify(updatedBody),
+    });
+    expect(secondPost.status).toBe(200);
+
+    const rows = await db.select().from(quizResult);
+    expect(rows.length).toBe(1);
+
+    const getRes = await app.request("/api/quiz-result", { headers: { cookie } });
+    expect(getRes.status).toBe(200);
+    const fetched = (await getRes.json()) as QuizResultRow;
+    expect(fetched.role).toBe("striker");
+    expect(fetched.outro).toBe("Updated outro");
   });
 });
 

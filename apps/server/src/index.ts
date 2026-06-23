@@ -68,7 +68,14 @@ app.post("/api/quiz-result", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
-  const parsed = quizResultBodySchema.safeParse(await c.req.json());
+  let rawBody: unknown;
+  try {
+    rawBody = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const parsed = quizResultBodySchema.safeParse(rawBody);
   if (!parsed.success) {
     return c.json({ error: parsed.error.flatten() }, 400);
   }
