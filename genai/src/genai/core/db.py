@@ -54,7 +54,7 @@ def _build(conn: sqlite3.Connection):
         for i, m in enumerate(metadata)
     ]
     conn.executemany(
-        "INSERT INTO players VALUES (?, ?, ?, ?, ?)", rows
+        "INSERT INTO players (id, name, team, face_path, embedding) VALUES (?, ?, ?, ?, ?)", rows
     )
     conn.commit()
     print(f"[db] Indexed {len(rows)} players in memory")
