@@ -4,7 +4,7 @@ summary: >-
   The web service is a React 19 single-page application (SPA) that provides the
   primary user interface for q-goal. It serves as the frontend entry point for
   us...
-last_updated: '2026-06-23T05:00:00.000Z'
+last_updated: '2026-06-23T06:00:00.000Z'
 tags:
   - service
   - typescript
@@ -27,7 +27,7 @@ The web service has no HTTP endpoints of its own; it is a browser-based SPA deli
 | `/login` | Google OAuth sign-in (redirects to `/quiz` on success) |
 | `/ai` | Real-time AI chat interface with streaming responses |
 | `/_auth/quiz` | Auth-protected quiz chat interface (calls genai `/quiz/start` + `/quiz/answer`) |
-| `/_auth/dashboard` | Auth-protected results dashboard (displays quiz assignments) |
+| `/_auth/dashboard` | Auth-protected results dashboard — reads TanStack Router location state (assignments, outro, role) from quiz completion; renders team-themed player cards; redirects to `/quiz` if no state present |
 | Other routes | (determined by route files in `src/routes/`) |
 
 Client-side navigation is handled entirely by TanStack Router; no server-side routing is required. The app exports no programmatic library surface—it is consumed as a built application artifact delivered to browsers.
@@ -108,5 +108,7 @@ The web app does not directly call external services; all external integrations 
 **Transport abstraction:** `DefaultChatTransport` wraps HTTP streaming into a standard `useChat` interface, decoupling chat logic from transport details.
 
 **Shared UI library:** Components import from `packages/ui` (Base UI + Tailwind CVA variants) to ensure visual consistency and reduce duplication across apps.
+
+**TanStack Router location state for cross-route results:** Quiz assignments, outro, and role are passed from `/_auth/quiz` to `/_auth/dashboard` via `navigate({ to: "/dashboard", state: ... })` — no URL params or sessionStorage. The dashboard reads state with `useRouterState`; if state is absent (direct nav or refresh) it redirects to `/quiz`.
 
 **Environment isolation:** Each `.env` file is app-scoped; web does not share configuration with server or other packages via environment files.
