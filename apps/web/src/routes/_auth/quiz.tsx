@@ -1,34 +1,16 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@q-goal/ui/components/card";
 import { Button } from "@q-goal/ui/components/button";
 import { Input } from "@q-goal/ui/components/input";
 import { Label } from "@q-goal/ui/components/label";
 import { useForm } from "@tanstack/react-form";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import z from "zod";
 import { env } from "@q-goal/env/web";
+import type { Assignment } from "../../lib/dashboard-types";
 
 export const Route = createFileRoute("/_auth/quiz")({
   component: QuizPage,
 });
-
-interface Player {
-  id: number;
-  name: string;
-  team: string;
-}
-
-interface Assignment {
-  title: string;
-  description: string;
-  player: Player;
-}
 
 interface StartResponse {
   session_id: string;
@@ -48,13 +30,13 @@ type QuizState =
   | { step: "loading-questions" }
   | {
       step: "answering";
+      role: string;
       sessionId: string;
       questions: string[];
       current: number;
       answers: string[];
     }
-  | { step: "submitting"; sessionId: string; answers: string[] }
-  | { step: "results"; outro: string; assignments: Assignment[] }
+  | { step: "submitting"; role: string; sessionId: string; answers: string[] }
   | { step: "error"; kind: "expired" | "generic"; message: string };
 
 const ANSWER_OPTIONS = ["A", "B", "C", "D"] as const;
@@ -163,40 +145,6 @@ function AnsweringStep({
   );
 }
 
-function ResultsStep({ state }: { state: Extract<QuizState, { step: "results" }> }) {
-  const { outro, assignments } = state;
-
-  return (
-    <div className="mx-auto w-full max-w-3xl mt-10 p-6 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold mb-4">Your Results</h1>
-        <p className="text-base leading-relaxed text-muted-foreground">{outro}</p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {assignments.map((assignment, index) => (
-          <Card key={index}>
-            <img
-              src={`${GENAI_URL}/faces/${assignment.player.id}`}
-              alt={assignment.player.name}
-              className="w-full object-cover"
-            />
-            <CardHeader>
-              <CardTitle>{assignment.title}</CardTitle>
-              <CardDescription>
-                {assignment.player.name} — {assignment.player.team}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">{assignment.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function ErrorStep({
   state,
   onRestart,
@@ -213,6 +161,7 @@ function ErrorStep({
 }
 
 function QuizPage() {
+  const navigate = useNavigate();
   const [quizState, setQuizState] = useState<QuizState>({ step: "role-input" });
 
   async function handleRoleSubmit(role: string) {
@@ -237,6 +186,7 @@ function QuizPage() {
       const data: StartResponse = await response.json();
       setQuizState({
         step: "answering",
+        role,
         sessionId: data.session_id,
         questions: data.questions,
         current: 0,
@@ -254,13 +204,14 @@ function QuizPage() {
   async function handleAnswer(letter: string) {
     if (quizState.step !== "answering") return;
 
-    const nextAnswers = [...quizState.answers, letter];
-    const isLast = quizState.current === quizState.questions.length - 1;
+    const { role, sessionId, questions, current, answers } = quizState;
+    const nextAnswers = [...answers, letter];
+    const isLast = current === questions.length - 1;
 
     if (!isLast) {
       setQuizState({
         ...quizState,
-        current: quizState.current + 1,
+        current: current + 1,
         answers: nextAnswers,
       });
       return;
@@ -268,7 +219,8 @@ function QuizPage() {
 
     setQuizState({
       step: "submitting",
-      sessionId: quizState.sessionId,
+      role,
+      sessionId,
       answers: nextAnswers,
     });
 
@@ -277,7 +229,7 @@ function QuizPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          session_id: quizState.sessionId,
+          session_id: sessionId,
           answers: nextAnswers,
         }),
       });
@@ -301,10 +253,14 @@ function QuizPage() {
       }
 
       const data: AnswerResponse = await response.json();
-      setQuizState({
-        step: "results",
-        outro: data.outro,
-        assignments: data.assignments,
+      navigate({
+        to: "/dashboard",
+        state: (prev) => ({
+          ...prev,
+          assignments: data.assignments,
+          outro: data.outro,
+          role,
+        }),
       });
     } catch {
       setQuizState({
@@ -333,10 +289,6 @@ function QuizPage() {
 
   if (quizState.step === "answering") {
     return <AnsweringStep state={quizState} onAnswer={handleAnswer} />;
-  }
-
-  if (quizState.step === "results") {
-    return <ResultsStep state={quizState} />;
   }
 
   return <ErrorStep state={quizState} onRestart={handleRestart} />;
