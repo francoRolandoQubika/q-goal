@@ -29,10 +29,10 @@
     "code_graph": {
       "command": "bash",
       "args": [
-        "/Users/frolando/IdeaProjects/q-goal/.claude/scripts/code-review-graph-mcp.sh",
+        "/Users/eduardoaosorio/Desktop/work/q-goal/.claude/scripts/code-review-graph-mcp.sh",
         "serve",
         "--repo",
-        "/Users/frolando/IdeaProjects/q-goal"
+        "/Users/eduardoaosorio/Desktop/work/q-goal"
       ]
     }
   }

@@ -97,6 +97,11 @@ def main():
     for team_dir in sorted(INPUT_DIR.iterdir()):
         if not team_dir.is_dir():
             continue
+        # DeepFace rejects image paths containing non-ASCII characters.
+        # This guard catches stale data left from a pre-fix scrape run.
+        if not team_dir.name.isascii():
+            print(f"\n[SKIP] {team_dir.name}: non-ASCII folder name — re-run scrape step to fix")
+            continue
         print(f"\n{team_dir.name}")
         for photo in sorted(team_dir.iterdir()):
             if photo.suffix.lower() not in (".jpg", ".jpeg", ".png"):

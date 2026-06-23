@@ -3,7 +3,7 @@ document_type: index
 summary: >-
   Summary catalog for the q-goal LLM wiki — one line per page, frontmatter
   inline.
-last_updated: '2026-06-18T21:06:25.817Z'
+last_updated: '2026-06-23T03:08:58.598Z'
 related:
   - ARCHITECTURE.md
   - SERVICES.md
@@ -14,7 +14,7 @@ Summary catalog of every page in this wiki. Each line carries the page summary, 
 
 ## Architecture
 
-- [ARCHITECTURE](ARCHITECTURE.md) — *architecture* — **q-goal** is a TypeScript-dominant monorepo structured around two separate workspace systems: **Tags:** architecture, topology, typescript, react, hono.
+- [ARCHITECTURE](ARCHITECTURE.md) — *architecture* — q-goal is a unified npm workspaces monorepo combining TypeScript (Bun-managed) and Python (uv-managed) workspaces in a single repository. The structure separ... **Tags:** architecture, topology, typescript, react, tanstack-router.
 
 ## Services catalog
 
@@ -22,13 +22,13 @@ Summary catalog of every page in this wiki. Each line carries the page summary, 
 
 ## Per-service docs
 
-- [auth](services/auth.md) — *service* — The auth package provides centralized session-based authentication configured around Better-Auth 1.6. It manages user identity, sessions, and credentials by ... **Tags:** service, typescript, library, better-auth.
-- [db](services/db.md) — *service* — Shared database library providing a type-safe PostgreSQL client and schema definitions for the entire monorepo. It is the single source of truth for all data... **Tags:** service, typescript, library.
-- [etl](services/etl.md) — *service* — The etl service is a Python CLI for data pipeline operations within the q-goal monorepo. It is designed to read from PostgreSQL tables, perform transformatio... **Tags:** service, python, cli.
-- [genai](services/genai.md) — *service* — genai is a Python CLI service for AI-powered data transformations and integrations. It reads from PostgreSQL tables (via the [[db]] package schema) and posts... **Tags:** service, python, cli.
-- [server](services/server.md) — *service* — The server is a Hono 4–based REST API backend responsible for handling all business logic, database queries via Drizzle ORM, and integration with external AI... **Tags:** service, typescript, backend, hono.
-- [ui](services/ui.md) — *service* — `@q-goal/ui` is a shared React component library that provides the design system and reusable UI components for the web frontend. It exports shadcn/ui-based ... **Tags:** service, typescript, library.
-- [web](services/web.md) — *service* — **web** is a client-side React 19 single-page application (SPA) that serves the browser interface. It uses TanStack Router for file-based client-side routing... **Tags:** service, typescript, frontend, react.
+- [auth](services/auth.md) — *service* — The `auth` package provides centralized authentication and session management for q-goal, built on Better-Auth 1.6.11. It abstracts OAuth and email/password ... **Tags:** service, typescript, library, better-auth.
+- [db](services/db.md) — *service* — The **db** package is the shared database abstraction layer for the q-goal monorepo. It defines the PostgreSQL schema using Drizzle ORM, exports a connected ... **Tags:** service, typescript, library.
+- [etl](services/etl.md) — *service* — The ETL service is a Python CLI that orchestrates the bulk ingestion and processing of images for the World Cup 2026 face-matching pipeline. It invokes the g... **Tags:** service, python, cli.
+- [genai](services/genai.md) — *service* — The GenAI service is a dedicated FastAPI backend for compute-intensive generative AI and face-matching workflows. It runs LangGraph agents for quiz generatio... **Tags:** service, python, backend, fastapi.
+- [server](services/server.md) — *service* — The server is a lightweight REST API backend built on Hono 4.8.2 that runs on port 3000. It serves as the primary data layer for the [[web]] frontend, handli... **Tags:** service, typescript, backend, hono.
+- [ui](services/ui.md) — *service* — The **ui** package is a shared React component library providing reusable, accessible UI components built on Base UI primitives and Tailwind CSS. It is consu... **Tags:** service, typescript, library, react, base-ui.
+- [web](services/web.md) — *service* — The web service is a React 19 single-page application (SPA) that provides the primary user interface for q-goal. It serves as the frontend entry point for us... **Tags:** service, typescript, frontend, react, tanstack-router.
 
 ## How agents should use this
 

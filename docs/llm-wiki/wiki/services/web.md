@@ -1,111 +1,114 @@
 ---
 document_type: service
 summary: >-
-  **web** is a client-side React 19 single-page application (SPA) that serves
-  the browser interface. It uses TanStack Router for file-based client-side
-  routing...
-last_updated: '2026-06-21T21:00:00.000Z'
+  The web service is a React 19 single-page application (SPA) that provides the
+  primary user interface for q-goal. It serves as the frontend entry point for
+  us...
+last_updated: '2026-06-23T06:00:00.000Z'
 tags:
   - service
   - typescript
   - frontend
   - react
+  - tanstack-router
 service_id: web
 ---
-# web
+# Web
 
-## Purpose
-
-**web** is a client-side React 19 single-page application (SPA) that serves the browser interface. It uses TanStack Router for file-based client-side routing, renders pages on demand, and delegates all data operations and business logic to the [[server]]. Form state is managed locally with React Hook Form and Zod validation; authentication is delegated to [[auth]] via the Better-Auth client.
+The web service is a React 19 single-page application (SPA) that provides the primary user interface for q-goal. It serves as the frontend entry point for user authentication (Google OAuth only), navigation across feature pages, and interaction with backend services. The app runs on port 3001 and communicates with the server (port 3000) for API requests and the genai service (port 8002) directly for quiz and face-matching workflows.
 
 ## Public API / Surface
 
-The web service is not a backend API but a browser SPA. Its public surface consists of the routes it serves:
+The web service has no HTTP endpoints of its own; it is a browser-based SPA delivered via static assets. Its surface consists of **client-side routes** defined in the TanStack Router file structure:
 
-- **`/`** — root layout and navigation shell (`src/routes/__root.tsx`)
-- **`/ai`** — AI chat interface with streaming message exchange (`src/routes/ai.tsx`)
-- **`/_auth/*`** — authentication layout group for sign-in, sign-up, and password reset pages (`src/routes/_auth/route.tsx`)
-- **`/dashboard`** — authenticated user dashboard (redirect target after login)
+| Route | Purpose |
+| ----- | ------- |
+| `/` | Root/home page with navigation |
+| `/login` | Google OAuth sign-in (redirects to `/quiz` on success) |
+| `/ai` | Real-time AI chat interface with streaming responses |
+| `/_auth/quiz` | Auth-protected quiz chat interface (calls genai `/quiz/start` + `/quiz/answer`) |
+| `/_auth/dashboard` | Auth-protected results dashboard — reads TanStack Router location state (assignments, outro, role) from quiz completion; renders team-themed player cards; redirects to `/quiz` if no state present |
+| Other routes | (determined by route files in `src/routes/`) |
 
-All routes render via TanStack Router's file-based convention. Pages export a `Route` object configured with `createFileRoute()` and a React component.
+Client-side navigation is handled entirely by TanStack Router; no server-side routing is required. The app exports no programmatic library surface—it is consumed as a built application artifact delivered to browsers.
 
 ## Internal Architecture
 
-Web follows a component-driven architecture with clear separation of concerns:
+The web app follows a React component tree layered as:
 
-- **Route layer** (`src/routes/`) — TanStack Router file-based pages; each exports a `Route` object and a component
-- **Component layer** (`src/components/`) — Reusable React components (forms, header, user menu, mode toggle) composed into pages
-- **Client layer** — Better-Auth client for session management; @ai-sdk/react's `useChat` hook for streaming AI conversations; TanStack react-form for form state and validation
-- **HTTP communication** — Fetch-based (no client SDK; direct calls to `env.VITE_SERVER_URL`)
-- **UI primitives** — Imported from [[ui]] (@q-goal/ui) including shadcn/ui components, lucide icons, and Tailwind utility functions
+1. **Root route** (`src/routes/__root.tsx`) — wraps all pages with global context providers (theme, auth, router)
+2. **Layout routes** (`src/routes/{group}/route.tsx`) — optional nested layouts for page groups (e.g., `_auth/` for signin/signup)
+3. **Page routes** (`src/routes/{name}.tsx`) — leaf routes that render page-level components
+4. **Components** (`src/components/{name}.tsx`) — reusable React components, imported from `packages/ui` (Base UI + Tailwind) and local components
+5. **Libraries** (`src/lib/`) — auth-client and utility functions
 
-Key libraries: React 19, TanStack Router v1, @hookform/react, @ai-sdk/react, @q-goal/ui, Zod.
+**Middleware & Providers:**
+- TanStack Router: handles file-based routing and code-splitting
+- Better-Auth client: manages session state and OAuth flows
+- Theme provider: controls light/dark mode via `next-themes`
+- Tailwind CSS (v4): styling via utility classes
+
+No dependency injection container or service locator; composition relies on React context and direct imports.
 
 ## Request Lifecycle
 
-**Typical page navigation:**
-1. User navigates to a route (e.g., `/ai`)
-2. TanStack Router matches the route file and renders the component
-3. Component mounts and calls the server API via `fetch()` if needed
-4. Server returns JSON; component updates local state via hooks
-5. React re-renders the page
+Typical user interaction flow:
 
-**AI chat example:**
-1. User types a message in the chat input
-2. `useChat` hook from @ai-sdk/react sends `POST /ai` with message history
-3. Server streams response chunks back (Server-Sent Events or streaming JSON)
-4. `useChat` hook updates the `messages` array on each chunk
-5. Chat component re-renders, displaying the new assistant message
+1. Browser loads `/` → **Route dispatch** (TanStack Router matches URL → `__root.tsx` renders)
+2. **Context initialization** → Root component instantiates theme, auth client, and child routes
+3. **Auth check** (on mount) → `src/lib/auth-client.ts` calls `/api/auth/getSession` to load user session
+4. **Route component render** → TanStack Router renders matched page component with components and UI imports
+5. **User interacts** (e.g., fills form, clicks button) → event handler submits to server or genai
+6. **API call** → Fetch request to server (`VITE_SERVER_URL` + route) or genai service with method/body/headers
+7. **Stream response** (for AI routes) → `@ai-sdk/react` DefaultChatTransport pipes server-sent events to UI state
+8. **Re-render** → Component state updates → UI reflects new data
 
-**Authentication example (email/password):**
-1. User submits sign-in form (email + password)
-2. Form validator runs Zod schema check (email format, password ≥8 chars)
-3. On validation pass, `authClient.signIn.email()` sends credentials to server
-4. Server validates and issues a session cookie (HTTP-only, secure, SameSite=none)
-5. Browser stores cookie; subsequent requests include it automatically
-6. On success, TanStack Router navigates to `/dashboard`; on error, toast displays
+**Example: Sign-in**  
+User visits `/login` → clicks "Sign in with Google" → `authClient.signIn.social({ provider: "google" })` redirects to Google OAuth → callback returns session cookie via Better-Auth handler on server → client auth state updates → redirect to `/quiz`.
 
-**Authentication example (Google OAuth):**
-1. User clicks "Sign in with Google" button on `/login`
-2. `authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" })` triggers a full browser redirect to Google's consent page
-3. After consent, Google redirects to the server's `/api/auth/callback/google` (handled by Better-Auth)
-4. Server completes the OAuth exchange and sets the session cookie
-5. Browser is redirected to `/dashboard`; on cancel or error, Better-Auth redirects back to `/login` with an error query param and a toast is displayed
+**Example: AI chat**  
+User types message on `/ai` → `useChat` hook sends POST to `/ai` with streaming request → server runs `streamText()` with Google Gemini → streams back to client via ReadableStream → UI appends tokens to chat.
 
 ## Data Layer
 
-Web owns no persistent data stores; it is stateless from the server's perspective. Local state includes:
+The web service does not own any persistent data. It reads from:
 
-- **Form state** — managed by @hookform/react with Zod validation (sign-in, sign-up, etc.)
-- **Chat messages** — managed by `useChat` hook (transient; lost on page reload)
-- **Session state** — managed by Better-Auth client; cookie persists across reloads
-- **UI state** — dark mode toggle, menu open/close, etc. (local React state or localStorage)
+- **Server** (`/api/*`) — user sessions, authentication state, chat history (if persisted)
+- **genai** (`/match`, `/quiz`) — match results, quiz questions
+- **Browser localStorage** — client-side session tokens, user preferences (if any)
 
-All application data (users, tasks, history) originates from the [[server]] API.
+All durable state is owned by the server and PostgreSQL database; web is stateless.
 
 ## Configuration
 
-Web reads the following environment variables (via `VITE_*` prefix for Vite):
+| Environment Variable | Purpose | Source |
+| -------------------- | ------- | ------ |
+| `VITE_SERVER_URL` | Base URL for server API calls (e.g., `http://localhost:3000`) | `apps/web/.env` |
+| `VITE_GENAI_URL` | Base URL for genai service direct calls (`/quiz/start`, `/quiz/answer`, `/faces/:id`) | `apps/web/.env` |
 
-| Variable | Purpose |
-| -------- | ------- |
-| `VITE_SERVER_URL` | Base URL for server API calls (e.g., `http://localhost:3000`) |
-
-Additional environment setup is documented in the root README under "Getting Started" (copy `.env.example` to `.env`).
+The prefix `VITE_` indicates these are Vite build-time variables and are embedded into the built assets. No environment variables are read at runtime.
 
 ## Integrations
 
-- **[[server]]** — all data fetches and business logic; web calls `${VITE_SERVER_URL}/api/*` endpoints via fetch
-- **[[auth]]** — Better-Auth client library; handles sign-in, sign-up, session refresh, and user state
-- **[[ui]]** — reusable React components, icons, and Tailwind utilities imported from `@q-goal/ui`
-- **Google Generative AI** — indirect; web calls server `/ai` endpoint, which streams Gemini responses back to the client
+| Service | Protocol | Purpose |
+| ------- | -------- | ------- |
+| [[server]] | REST (fetch) | API calls for auth, chat, user data |
+| [[genai]] | REST (fetch) | Face matching (`/match`) and quiz endpoints (`/quiz`) |
+| Google Generative AI | Indirect via [[server]] | LLM inference; server owns API key |
+| Google OAuth | Indirect via [[server]] | User authentication; server owns credentials |
+
+The web app does not directly call external services; all external integrations are mediated by the server to keep credentials secure.
 
 ## Service-Specific Patterns
 
-**TanStack Router file-based routing** — Each route file exports a `Route` object via `createFileRoute("/path")`. Layout groups (prefixed with `_`) wrap sibling routes. Route params are accessed via `useParams()`.
+**File-based routing:** TanStack Router derives routes from file structure in `src/routes/`. Misspelled filenames are silently ignored; use exact conventions (`__root.tsx`, `{name}.tsx`, `{group}/route.tsx`).
 
-**React Hook Form + Zod validation** — Forms use `useForm()` with `onSubmit` validators that run Zod schemas client-side before submission. Error messages are displayed inline and in toast notifications.
+**React hooks for state:** Components use `useState`, `useEffect`, and `useChat` from `@ai-sdk/react` to manage local and streaming state. No global state container (Redux, Zustand) observed.
 
-**useChat hook for streaming** — @ai-sdk/react's `useChat` hook abstracts message state and streaming from the server, exposing `messages`, `sendMessage`, and `status` props. The hook handles chunked responses automatically.
+**Transport abstraction:** `DefaultChatTransport` wraps HTTP streaming into a standard `useChat` interface, decoupling chat logic from transport details.
 
-**Better-Auth client for auth state** — `createAuthClient()` factory returns a client with hooks (`useSession()`) and methods (`signIn.email()`, `signUp.email()`, `signIn.social()`, etc.). Session state is automatically persisted via HTTP-only cookies; logout clears both client state and the server session. Google OAuth is triggered via `signIn.social({ provider: "google", callbackURL: "/dashboard" })` — no changes to `auth-client.ts` are needed to add new social providers.
+**Shared UI library:** Components import from `packages/ui` (Base UI + Tailwind CVA variants) to ensure visual consistency and reduce duplication across apps.
+
+**TanStack Router location state for cross-route results:** Quiz assignments, outro, and role are passed from `/_auth/quiz` to `/_auth/dashboard` via `navigate({ to: "/dashboard", state: ... })` — no URL params or sessionStorage. The dashboard reads state with `useRouterState`; if state is absent (direct nav or refresh) it redirects to `/quiz`.
+
+**Environment isolation:** Each `.env` file is app-scoped; web does not share configuration with server or other packages via environment files.

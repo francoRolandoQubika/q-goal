@@ -131,8 +131,9 @@ uv sync
 Run a project's entry point:
 
 ```bash
-uv run etl       # -> "Hello from etl!"
-uv run genai     # -> "Hello from genai!"
+uv run etl               # -> "Hello from etl!"
+uv run genai-api         # Start the GenAI FastAPI server (port 8002)
+uv run genai-pipeline    # Run the WC2026 face-match ETL pipeline
 ```
 
 Add dependencies to a specific workspace member:
@@ -241,6 +242,7 @@ q-goal/
 
 - `uv sync`: Install/resolve the Python workspace
 - `uv run etl`: Run the `etl` entry point
-- `uv run genai`: Run the `genai` entry point
+- `uv run genai-api`: Start the GenAI FastAPI server (port 8002)
+- `uv run genai-pipeline`: Run the WC2026 face-match ETL pipeline
 - `uv run ruff check --fix`: Lint Python
 - `uv run ruff format`: Format Python
