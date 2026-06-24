@@ -1,6 +1,104 @@
-# q-goal
+# QWC Matcher ⚽
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, and more. It also includes a Python (`uv`) workspace for data and generative-AI work (`etl`, `genai`).
+Turn a 6-question onboarding quiz into a personalized World Cup 2026 profile card — ready to share on LinkedIn or Slack.
+
+## The Problem
+
+Large distributed teams struggle to connect across geographies and roles. Qubika needed an icebreaker that felt genuinely personal — not another generic "get to know your team" survey. With the World Cup 2026 happening in the same year, football was the obvious shared language.
+
+## The Solution
+
+QWC Matcher takes employees through a short Typeform-style onboarding quiz (6 questions), then uses AI to assign them 6 real World Cup 2026 players — one per workplace relationship slot  The result is a downloadable PNG profile card that feels hand-written for each user, not pulled from a template.
+
+Google OAuth login → quiz → AI-streamed fun facts → downloadable player card.
+
+## How AI Was Used
+
+**In the product:** The Python `genai` service runs a LangGraph agent that receives all 6 quiz answers, maps them to personality traits, queries real player stats (position, caps, goals) from a local SQLite DB built from FIFA data, and streams the fun fact descriptions progressively to the React dashboard via the AI SDK. The AI output *is* the product — not a feature bolted on.
+
+**To build it:** Every Jira story was processed with `/generate-test-cases` — a custom Claude Code skill that downloads the ticket, applies equivalence partitioning, boundary values, and negative testing, then publishes structured subtasks directly back to Jira. The entire QA pipeline was AI-assisted.
+
+**Face matching bonus:** A secondary feature lets employees upload a photo and get matched to their World Cup lookalike using three embedding models (Only developed on the backend side). 
+
+## Tech Stack
+
+| Layer | Tech |
+|-------|------|
+| Frontend | React 19, TanStack Router, TailwindCSS, AI SDK |
+| Backend | Hono 4, Drizzle ORM, PostgreSQL, Better-Auth |
+| AI / GenAI | FastAPI, LangGraph, OpenAI GPT-4o-mini, DeepFace, CLIP, InsightFace |
+| Runtime | Bun (JS/TS), uv + Python 3.13 (AI services) |
+| Data | FIFA API scraper → face crop pipeline → SQLite embeddings DB |
+
+## How to Run It Locally
+
+### Prerequisites
+- [Bun](https://bun.sh) (see `packageManager` in `package.json`)
+- [Docker](https://www.docker.com) (for Postgres)
+- [uv](https://docs.astral.sh/uv/) (for Python services)
+
+### 1. Install dependencies
+
+```bash
+bun install
+uv sync
+```
+
+### 2. Configure environment
+
+```bash
+cp apps/server/.env.example apps/server/.env
+cp apps/web/.env.example apps/web/.env
+cp genai/.env.example genai/.env
+```
+
+Set `BETTER_AUTH_SECRET` (32+ chars) and `OPENAI_API_KEY` in their respective `.env` files.
+
+### 3. Start the database
+
+```bash
+bun run db:start
+bun run db:push
+```
+
+### 4. Start web + server
+
+```bash
+bun run dev
+```
+
+- Web: http://localhost:3001
+- API: http://localhost:3000
+
+### 5. Start the GenAI service
+
+```bash
+uv run genai-api
+```
+
+GenAI runs on http://localhost:8002. Set `VITE_GENAI_URL=http://localhost:8002` in `apps/web/.env`.
+
+### 6. (Optional) Build the player database from scratch
+
+Takes ~40 minutes on first run. Pre-built data files are gitignored.
+
+```bash
+uv run genai-pipeline
+```
+
+If interrupted, re-run the same command — completed steps are skipped automatically.
+
+## Team
+
+| Name | Country | Role |
+|------|---------|------|
+| Martín Dauber | 🇺🇾 Uruguay | Project Manager |
+| Facundo Sentena | 🇺🇾 Uruguay | AI Engineer |
+| Eduardo Osorio | 🇨🇴 Colombia | Developer |
+| Franco Rolando | 🇦🇷 Argentina | Developer |
+| Marcos Storti | 🇦🇷 Argentina | QA Analyst |
+
+---
 
 ## Features
 
