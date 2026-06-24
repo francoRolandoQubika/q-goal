@@ -4,7 +4,7 @@ summary: >-
   The GenAI service is a dedicated FastAPI backend for compute-intensive
   generative AI and face-matching workflows. It runs LangGraph agents for quiz
   generatio...
-last_updated: '2026-06-23T20:00:00.000Z'
+last_updated: '2026-06-23T22:59:00.000Z'
 tags:
   - service
   - python
@@ -23,9 +23,12 @@ The GenAI service is a dedicated FastAPI backend for compute-intensive generativ
 **Face Matching**
 - `POST /match` — Upload a photo and receive top-K similar World Cup 2026 player matches. Accepts `UploadFile` (photo), query params `top` (1–20, default 3) and `model` (facenet | clip | insightface, default clip). Returns `MatchResponse` with `PlayerMatch` list including player name, similarity score, and profile URL.
 
+**Player Photos**
+- `GET /photos/{player_id}` — Serve the original full headshot (from `players/`) by DB primary key. Returns JPEG/PNG `FileResponse`; 404 if not found.
+
 **Quiz**
-- `POST /quiz/start` — Initialize a quiz session. Returns session ID and first question.
-- `POST /quiz/{session_id}/answer` — Submit an answer. Returns feedback and next question or session completion state.
+- `POST /quiz/start` — Initialize a quiz session. Returns session ID, `total_questions`, and a `questions` list of `QuizQuestion` objects (`{ question: str, answers: [{ key: str, text: str }, …] }`).
+- `POST /quiz/{session_id}/answer` — Submit an answer. Returns completion state with `outro` narrative and `assignments` list.
 
 Other endpoints as defined in `genai/src/genai/api.py`. Runs on port 8002 and can be invoked by [[server]] via HTTP or run standalone for the ETL pipeline.
 

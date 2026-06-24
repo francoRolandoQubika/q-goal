@@ -1,6 +1,7 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
+import AppBar from "@/components/app-bar";
 
 export const Route = createFileRoute("/_auth")({
   component: AuthLayout,
@@ -16,5 +17,10 @@ export const Route = createFileRoute("/_auth")({
 });
 
 function AuthLayout() {
-  return <Outlet />;
+  return (
+    <div className="grid grid-rows-[auto_1fr] h-svh overflow-hidden">
+      <AppBar />
+      <Outlet />
+    </div>
+  );
 }

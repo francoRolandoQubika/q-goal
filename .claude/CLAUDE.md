@@ -25,8 +25,8 @@ Packages in `packages/*` are imported as `@q-goal/<name>` — never use relative
 | File Type              | Location Pattern            | Example                               |
 | ---------------------- | --------------------------- | ------------------------------------- |
 | TanStack root route    | `src/routes/__root.tsx`     | `apps/web/src/routes/__root.tsx`      |
-| TanStack page route    | `src/routes/{name}.tsx`     | `apps/web/src/routes/ai.tsx`          |
-| React component        | `src/components/{name}.tsx` | `apps/web/src/components/header.tsx`  |
+| TanStack page route    | `src/routes/{name}.tsx`     | `apps/web/src/routes/login.tsx`       |
+| React component        | `src/components/{name}.tsx` | `apps/web/src/components/app-bar.tsx` |
 | Auth client lib        | `src/lib/auth-client.ts`    | `apps/web/src/lib/auth-client.ts`     |
 | Local type definitions | `src/lib/{domain}-types.ts` | `apps/web/src/lib/dashboard-types.ts` |
 | App entry              | `src/main.tsx`              | `apps/web/src/main.tsx`               |
