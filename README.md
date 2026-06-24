@@ -159,10 +159,14 @@ openssl rand -base64 32
 
 ### Option A — Run everything in Docker
 
-Builds and starts the web app, API server, and Postgres as containers.
+The Docker stack includes `web`, `server`, `postgres`, and the `genai` FastAPI service. The GenAI service mounts pre-built data files from your local machine, so you must run the ETL pipeline before starting Docker:
 
 ```bash
-bun run docker:up      # build + start (web, server, postgres)
+# 1. Build the player database (takes ~40 min, only needed once)
+uv run genai-pipeline
+
+# 2. Start the full stack
+bun run docker:up
 ```
 
 Once the stack is healthy, apply the database schema (reaches the container's
@@ -288,7 +292,7 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 Environment variables are read from each app's `.env` file (baked into web builds for public variables) and overridden in `docker-compose.yml` for container networking.
 
-> The Python projects (`etl`, `genai`) are not yet containerized or deployed.
+> The `genai` service requires pre-built data files (players.db, embeddings, faces). Run `uv run genai-pipeline` once before `docker compose up`.
 
 ## Git Hooks and Formatting
 
