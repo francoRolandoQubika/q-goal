@@ -8,9 +8,9 @@
   --card-foreground: oklch(0.18 0.06 145);
   --primary: oklch(0.75 0.14 88); /* gold foil — primary / accent buttons */
   --primary-foreground: oklch(0.18 0.06 145); /* dark text on gold */
-  --secondary: oklch(0.60 0.22 250); /* vivid accent — electric blue */
+  --secondary: oklch(0.6 0.22 250); /* vivid accent — electric blue */
   --secondary-foreground: oklch(0.98 0 0); /* white text on blue */
-  --team-accent: oklch(0.60 0.22 250); /* per-team override — defaults to vivid accent */
+  --team-accent: oklch(0.6 0.22 250); /* per-team override — defaults to vivid accent */
 }
 
 /* Dark mode: pitch-night base, gold-foil primary, electric-blue accent */
@@ -21,9 +21,9 @@
   --card-foreground: oklch(0.96 0.02 88);
   --primary: oklch(0.75 0.14 88); /* gold foil — same in dark (metallic) */
   --primary-foreground: oklch(0.18 0.06 145); /* dark text on gold */
-  --secondary: oklch(0.60 0.22 250); /* vivid accent — electric blue */
+  --secondary: oklch(0.6 0.22 250); /* vivid accent — electric blue */
   --secondary-foreground: oklch(0.98 0 0);
-  --team-accent: oklch(0.60 0.22 250); /* per-team override — defaults to vivid accent */
+  --team-accent: oklch(0.6 0.22 250); /* per-team override — defaults to vivid accent */
 }
 
 @theme inline {

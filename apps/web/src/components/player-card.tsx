@@ -64,20 +64,18 @@ export function PlayerCard({ assignment }: PlayerCardProps) {
         }
       `}</style>
 
-      {imgFailed || (cutoutUrl === null && !imgFailed) ? (
-        imgFailed ? (
-          <div className="w-full aspect-square flex items-center justify-center text-4xl font-bold bg-muted text-muted-foreground">
-            {initial}
-          </div>
-        ) : (
-          <div className="w-full aspect-square flex items-center justify-center bg-muted/50" />
-        )
-      ) : (
+      {cutoutUrl !== null ? (
         <img
           src={cutoutUrl}
           alt={assignment.player.name}
           className="w-full object-cover aspect-square"
         />
+      ) : imgFailed ? (
+        <div className="w-full aspect-square flex items-center justify-center text-4xl font-bold bg-muted text-muted-foreground">
+          {initial}
+        </div>
+      ) : (
+        <div className="w-full aspect-square flex items-center justify-center bg-muted/50" />
       )}
 
       <CardHeader>

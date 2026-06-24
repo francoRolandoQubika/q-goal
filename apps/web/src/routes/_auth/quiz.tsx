@@ -10,6 +10,7 @@ import { env } from "@q-goal/env/web";
 import type { Assignment } from "../../lib/dashboard-types";
 import { deleteQuizResult, fetchQuizResult, saveQuizResult } from "../../lib/quiz-result";
 import { RedoQuizDialog } from "../../components/redo-quiz-dialog";
+import Loader from "../../components/loader";
 
 export const Route = createFileRoute("/_auth/quiz")({
   loader: async () => {
@@ -74,54 +75,74 @@ function RoleInputStep({ onSubmit }: { onSubmit: (role: string) => Promise<void>
   });
 
   return (
-    <div className="mx-auto w-full max-w-md mt-10 p-6">
-      <h1 className="mb-2 text-center text-3xl font-bold">Q-Goal Quiz</h1>
-      <p className="mb-6 text-center text-muted-foreground">
-        Tell us your role to get personalized questions.
-      </p>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center px-6 py-12"
+      style={{ backgroundColor: "color-mix(in oklch, var(--team-accent) 8%, var(--background))" }}
+    >
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center space-y-3">
+          <p className="text-5xl" aria-hidden="true">
+            🔭
+          </p>
+          <h1
+            className="text-4xl font-bold tracking-tight"
+            style={{ fontFamily: "var(--font-display, Impact, sans-serif)" }}
+          >
+            Scouting Mission
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            What position do you play? Tell us your role and we'll find your World Cup match.
+          </p>
+        </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-        className="space-y-4"
-      >
-        <form.Field name="role">
-          {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>Your role</Label>
-              <Input
-                id={field.name}
-                name={field.name}
-                placeholder="e.g. Goalkeeper, Midfielder, Coach"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-              />
-              {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-red-500 text-sm">
-                  {error?.message}
-                </p>
-              ))}
-            </div>
-          )}
-        </form.Field>
-
-        <form.Subscribe
-          selector={(state) => ({
-            canSubmit: state.canSubmit,
-            isSubmitting: state.isSubmitting,
-          })}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          className="space-y-4"
         >
-          {({ canSubmit, isSubmitting }) => (
-            <Button type="submit" className="w-full" disabled={!canSubmit || isSubmitting}>
-              {isSubmitting ? "Starting quiz..." : "Start Quiz"}
-            </Button>
-          )}
-        </form.Subscribe>
-      </form>
+          <form.Field name="role">
+            {(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>Your role</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  placeholder="e.g. Goalkeeper, Midfielder, Coach"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p key={error?.message} className="text-red-500 text-sm">
+                    {error?.message}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Subscribe
+            selector={(state) => ({
+              canSubmit: state.canSubmit,
+              isSubmitting: state.isSubmitting,
+            })}
+          >
+            {({ canSubmit, isSubmitting }) => (
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!canSubmit || isSubmitting}
+                style={{ backgroundColor: "var(--team-accent)", borderColor: "var(--team-accent)" }}
+              >
+                {isSubmitting ? "Starting…" : "Start Scouting"}
+              </Button>
+            )}
+          </form.Subscribe>
+        </form>
+      </div>
     </div>
   );
 }
@@ -137,28 +158,41 @@ function AnsweringStep({
   const { question, answers } = questions[current];
 
   return (
-    <div className="mx-auto w-full max-w-xl mt-10 p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Question</h2>
-        <span className="text-sm text-muted-foreground">
-          {current + 1} / {questions.length}
-        </span>
-      </div>
-
-      <p className="whitespace-pre-wrap text-base leading-relaxed">{question}</p>
-
-      <div className="flex flex-col gap-3">
-        {answers.map((option) => (
-          <Button
-            key={option.key}
-            variant="outline"
-            className="h-auto w-full justify-start whitespace-normal py-3 px-4 text-left text-base font-medium"
-            onClick={() => onAnswer(option.key)}
+    <div
+      className="min-h-screen flex flex-col items-center justify-start px-6 py-12"
+      style={{ backgroundColor: "color-mix(in oklch, var(--team-accent) 8%, var(--background))" }}
+    >
+      <div className="w-full max-w-xl space-y-6">
+        <div className="flex items-center justify-between">
+          <h2
+            className="text-xl font-bold"
+            style={{ fontFamily: "var(--font-display, Impact, sans-serif)" }}
           >
-            <span className="font-bold shrink-0 mr-2">{option.key}.</span>
-            <span>{option.text}</span>
-          </Button>
-        ))}
+            Scouting Mission
+          </h2>
+          <span className="text-sm text-muted-foreground font-mono">
+            {current + 1} / {questions.length}
+          </span>
+        </div>
+
+        <p className="whitespace-pre-wrap text-base leading-relaxed">{question}</p>
+
+        <div className="flex flex-col gap-3">
+          {answers.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              className="group relative h-auto w-full rounded-lg border-2 px-4 py-3 text-left text-base font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:bg-[color-mix(in_oklch,var(--team-accent)_15%,transparent)]"
+              style={{ borderColor: "var(--team-accent)" }}
+              onClick={() => onAnswer(option.key)}
+            >
+              <span className="font-bold shrink-0 mr-2" style={{ color: "var(--team-accent)" }}>
+                {option.key}.
+              </span>
+              <span>{option.text}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -364,8 +398,8 @@ function QuizPage() {
     quizState.step === "saving"
   ) {
     return (
-      <div className="mx-auto w-full max-w-md mt-10 p-6 text-center">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader message="Scouting…" />
       </div>
     );
   }
