@@ -18,16 +18,16 @@ export const Route = createFileRoute("/_auth/dashboard")({
   component: DashboardPage,
 });
 
-const TEAM_COLORS: Record<string, { bg: string; accent: string; text: string }> = {
-  argentina: { bg: "#74b9ff", accent: "#0984e3", text: "#ffffff" },
-  brazil: { bg: "#55efc4", accent: "#00b894", text: "#2d3436" },
-  france: { bg: "#6c5ce7", accent: "#2d3436", text: "#ffffff" },
-  england: { bg: "#e17055", accent: "#d63031", text: "#ffffff" },
-  spain: { bg: "#fdcb6e", accent: "#e17055", text: "#2d3436" },
-  germany: { bg: "#dfe6e9", accent: "#636e72", text: "#2d3436" },
-  portugal: { bg: "#fd79a8", accent: "#e84393", text: "#ffffff" },
-  usa: { bg: "#74b9ff", accent: "#0652DD", text: "#ffffff" },
-  default: { bg: "#b2bec3", accent: "#636e72", text: "#2d3436" },
+/** OKLCH team accent colors matching the Sticker Album token palette. */
+const TEAM_ACCENTS: Record<string, string> = {
+  argentina: "oklch(0.55 0.20 230)",
+  brazil: "oklch(0.55 0.18 155)",
+  france: "oklch(0.50 0.22 270)",
+  england: "oklch(0.55 0.18 25)",
+  spain: "oklch(0.65 0.18 55)",
+  germany: "oklch(0.65 0.04 265)",
+  portugal: "oklch(0.50 0.20 15)",
+  usa: "oklch(0.50 0.20 250)",
 };
 
 function DashboardPage() {
@@ -38,59 +38,55 @@ function DashboardPage() {
   const navigate = useNavigate();
 
   const team = data.assignments[0]?.player.team ?? "";
-  const theme = TEAM_COLORS[team.toLowerCase()] ?? TEAM_COLORS.default;
+  const teamAccent = TEAM_ACCENTS[team.toLowerCase()] ?? "oklch(0.60 0.22 250)";
 
   return (
-    <div
-      id="dashboard-share-target"
-      style={{ backgroundColor: theme.bg, color: theme.text }}
-      className="min-h-screen"
-    >
-      <DashboardHeader
-        name={session.data?.user.name ?? ""}
-        avatarUrl={session.data?.user.image}
-        role={data.role}
-        team={team}
-      />
+    <div className="min-h-screen" style={{ "--team-accent": teamAccent } as React.CSSProperties}>
+      <div
+        id="dashboard-share-target"
+        className="p-6 space-y-6"
+        style={{ backgroundColor: `color-mix(in oklch, ${teamAccent} 15%, transparent)` }}
+      >
+        <DashboardHeader
+          name={session.data?.user.name ?? ""}
+          avatarUrl={session.data?.user.image}
+          role={data.role}
+          team={team}
+        />
 
-      <div className="px-6 pb-6 space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {data.assignments.length === 0 ? (
             <p className="col-span-full text-center opacity-70">No results yet</p>
           ) : (
             data.assignments.map((assignment) => (
-              <PlayerCard
-                key={assignment.player.id}
-                assignment={assignment}
-                accentColor={theme.accent}
-              />
+              <PlayerCard key={assignment.player.id} assignment={assignment} />
             ))
           )}
         </div>
 
         {data.outro && <p className="text-base leading-relaxed">{data.outro}</p>}
-
-        <div className="flex gap-3">
-          <Button disabled>Download PNG</Button>
-          <Button disabled>Share</Button>
-          <Button variant="outline" onClick={() => setRedoOpen(true)}>
-            Redo quiz
-          </Button>
-        </div>
-        <RedoQuizDialog
-          open={redoOpen}
-          onOpenChange={setRedoOpen}
-          onConfirm={async () => {
-            try {
-              await deleteQuizResult();
-              await router.invalidate();
-              navigate({ to: "/quiz" });
-            } catch {
-              toast.error("Failed to reset quiz. Please try again.");
-            }
-          }}
-        />
       </div>
+
+      <div className="flex gap-3 p-6">
+        <Button disabled>Download PNG</Button>
+        <Button disabled>Share</Button>
+        <Button variant="outline" onClick={() => setRedoOpen(true)}>
+          Redo quiz
+        </Button>
+      </div>
+      <RedoQuizDialog
+        open={redoOpen}
+        onOpenChange={setRedoOpen}
+        onConfirm={async () => {
+          try {
+            await deleteQuizResult();
+            await router.invalidate();
+            navigate({ to: "/quiz" });
+          } catch {
+            toast.error("Failed to reset quiz. Please try again.");
+          }
+        }}
+      />
     </div>
   );
 }

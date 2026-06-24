@@ -4,7 +4,7 @@ summary: >-
   The web service is a React 19 single-page application (SPA) that provides the
   primary user interface for q-goal. It serves as the frontend entry point for
   us...
-last_updated: '2026-06-23T22:59:00.000Z'
+last_updated: '2026-06-23T23:30:00.000Z'
 tags:
   - service
   - typescript
@@ -91,12 +91,12 @@ The prefix `VITE_` indicates these are Vite build-time variables and are embedde
 
 | Service | Protocol | Purpose |
 | ------- | -------- | ------- |
-| [[server]] | REST (fetch) | API calls for auth, chat, user data |
-| [[genai]] | REST (fetch) | Face matching (`/match`) and quiz endpoints (`/quiz`) |
+| [[server]] | REST (fetch) | API calls for auth, chat, user data, and quiz result persistence (`/api/quiz-result`) |
+| [[genai]] | REST (fetch) | Quiz endpoints (`/quiz/*`) and player face data (`/faces/:id`) — called directly from the browser |
 | Google Generative AI | Indirect via [[server]] | LLM inference; server owns API key |
 | Google OAuth | Indirect via [[server]] | User authentication; server owns credentials |
 
-The web app does not directly call external services; all external integrations are mediated by the server to keep credentials secure.
+Credentials-bearing integrations (Google OAuth, Google Generative AI) are mediated by the server. The [[genai]] service is called directly from the browser for quiz and face-matching workflows; it requires no user credentials.
 
 ## Service-Specific Patterns
 

@@ -1,30 +1,46 @@
-/* Design source: placeholder — replace with Figma file reference when brand is finalized */
+/* Design source: World Cup Sticker Album palette — QWCM-110 */
 
+/* Light mode: chalk-cream base, gold-foil primary, electric-blue accent */
 :root {
-  --primary: oklch(0.55 0.2 265);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.65 0.15 220);
-  --secondary-foreground: oklch(0.98 0 0);
-  --tertiary: oklch(0.72 0.18 160);
-  --tertiary-foreground: oklch(0.15 0 0);
+  --background: oklch(0.96 0.02 88); /* chalk cream — warm off-white background */
+  --foreground: oklch(0.18 0.06 145); /* pitch-night — near-black text on light */
+  --card: oklch(0.98 0.01 88); /* slightly lighter chalk for cards */
+  --card-foreground: oklch(0.18 0.06 145);
+  --primary: oklch(0.75 0.14 88); /* gold foil — primary / accent buttons */
+  --primary-foreground: oklch(0.18 0.06 145); /* dark text on gold */
+  --secondary: oklch(0.6 0.22 250); /* vivid accent — electric blue */
+  --secondary-foreground: oklch(0.98 0 0); /* white text on blue */
+  --team-accent: oklch(0.6 0.22 250); /* per-team override — defaults to vivid accent */
 }
 
+/* Dark mode: pitch-night base, gold-foil primary, electric-blue accent */
 .dark {
-  --primary: oklch(0.65 0.2 265);
-  --primary-foreground: oklch(0.10 0 0);
-  --secondary: oklch(0.55 0.15 220);
-  --secondary-foreground: oklch(0.10 0 0);
-  --tertiary: oklch(0.60 0.18 160);
-  --tertiary-foreground: oklch(0.98 0 0);
+  --background: oklch(0.18 0.06 145); /* pitch-night — deep forest green, near-black */
+  --foreground: oklch(0.96 0.02 88); /* chalk cream — text on dark */
+  --card: oklch(0.22 0.06 145); /* slightly lighter pitch for cards */
+  --card-foreground: oklch(0.96 0.02 88);
+  --primary: oklch(0.75 0.14 88); /* gold foil — same in dark (metallic) */
+  --primary-foreground: oklch(0.18 0.06 145); /* dark text on gold */
+  --secondary: oklch(0.6 0.22 250); /* vivid accent — electric blue */
+  --secondary-foreground: oklch(0.98 0 0);
+  --team-accent: oklch(0.6 0.22 250); /* per-team override — defaults to vivid accent */
 }
 
 @theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-tertiary: var(--tertiary);
-  --color-tertiary-foreground: var(--tertiary-foreground);
+  --color-team-accent: var(--team-accent);
+
+  /* Display font for headings and sticker labels */
+  --font-display: "Bebel Neue", "Impact", ui-sans-serif;
+  /* Body sans-serif */
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  /* Monospace for stats and numbers */
+  --font-mono: "JetBrains Mono", "Fira Mono", monospace;
 }
