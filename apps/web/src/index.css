@@ -1,3 +1,6 @@
+@import "@fontsource/bebas-neue/400.css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
 @import "@q-goal/ui/globals.css";
 @import "./styles/brand.css";
 @source "../node_modules/streamdown/dist/*.js";

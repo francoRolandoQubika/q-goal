@@ -4,9 +4,9 @@
 :root {
   --background: oklch(0.96 0.02 88); /* chalk cream — warm off-white background */
   --foreground: oklch(0.18 0.06 145); /* pitch-night — near-black text on light */
-  --card: oklch(0.98 0.01 88); /* slightly lighter chalk for cards */
+  --card: oklch(0.99 0.008 88); /* slightly lighter chalk for cards */
   --card-foreground: oklch(0.18 0.06 145);
-  --primary: oklch(0.75 0.14 88); /* gold foil — primary / accent buttons */
+  --primary: oklch(0.78 0.15 86); /* gold foil — primary / accent buttons */
   --primary-foreground: oklch(0.18 0.06 145); /* dark text on gold */
   --secondary: oklch(0.6 0.22 250); /* vivid accent — electric blue */
   --secondary-foreground: oklch(0.98 0 0); /* white text on blue */
@@ -15,11 +15,11 @@
 
 /* Dark mode: pitch-night base, gold-foil primary, electric-blue accent */
 .dark {
-  --background: oklch(0.18 0.06 145); /* pitch-night — deep forest green, near-black */
+  --background: oklch(0.21 0.05 152); /* pitch-night — deep stadium green */
   --foreground: oklch(0.96 0.02 88); /* chalk cream — text on dark */
-  --card: oklch(0.22 0.06 145); /* slightly lighter pitch for cards */
+  --card: oklch(0.25 0.045 152); /* slightly lighter pitch for cards */
   --card-foreground: oklch(0.96 0.02 88);
-  --primary: oklch(0.75 0.14 88); /* gold foil — same in dark (metallic) */
+  --primary: oklch(0.79 0.15 86); /* gold foil — same in dark (metallic) */
   --primary-foreground: oklch(0.18 0.06 145); /* dark text on gold */
   --secondary: oklch(0.6 0.22 250); /* vivid accent — electric blue */
   --secondary-foreground: oklch(0.98 0 0);
@@ -37,10 +37,66 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-team-accent: var(--team-accent);
 
-  /* Display font for headings and sticker labels */
-  --font-display: "Bebel Neue", "Impact", ui-sans-serif;
+  /* Display face for headings and sticker labels — tall condensed sports poster */
+  --font-display: "Bebas Neue", "Impact", "Haettenschweiler", sans-serif;
   /* Body sans-serif */
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   /* Monospace for stats and numbers */
-  --font-mono: "JetBrains Mono", "Fira Mono", monospace;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", "Fira Mono", monospace;
+}
+
+/* Stadium-light backdrop: a faint gold glow up top and a cool wash below the
+   pitch, fixed so it stays put while content scrolls. Screens that tint
+   themselves with a translucent team color let this show through. */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(110% 70% at 50% -15%, color-mix(in oklch, var(--primary) 16%, transparent), transparent 55%),
+    radial-gradient(120% 90% at 50% 115%, color-mix(in oklch, var(--secondary) 10%, transparent), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Display type wants a hair of tracking and tight leading to read as a poster
+   rather than a stretched system font. */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.015em;
+  line-height: 0.95;
+}
+
+/* Holographic foil sweep used on collectible stickers. Disabled when the user
+   prefers reduced motion. */
+.foil-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 28%,
+    oklch(0.95 0.06 95 / 0.35) 46%,
+    oklch(1 0 0 / 0.45) 50%,
+    oklch(0.95 0.06 95 / 0.35) 54%,
+    transparent 72%
+  );
+  background-size: 250% 100%;
+  background-position: 200% 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .foil-shimmer::after {
+    animation: foil-sweep 5s ease-in-out infinite;
+  }
+}
+
+@keyframes foil-sweep {
+  0% {
+    background-position: 200% 0;
+  }
+  55%,
+  100% {
+    background-position: -120% 0;
+  }
 }

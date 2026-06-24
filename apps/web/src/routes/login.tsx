@@ -48,31 +48,43 @@ function RouteComponent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md space-y-8 text-center">
-        <div className="space-y-3">
-          <p className="text-5xl" aria-hidden="true">
-            ⚽
-          </p>
-          <h1
-            className="text-4xl font-bold tracking-tight"
-            style={{ fontFamily: "var(--font-display, Impact, sans-serif)" }}
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+      <div className="w-full max-w-sm space-y-9 text-center">
+        <div className="space-y-5">
+          {/* Foil-stamped emblem — the sticker-pack hook. */}
+          <div
+            className="foil-shimmer relative mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full p-[2px] shadow-lg shadow-black/30"
+            style={{
+              backgroundImage:
+                "linear-gradient(150deg, oklch(0.88 0.11 92), oklch(0.62 0.1 82) 40%, oklch(0.95 0.05 95) 62%, oklch(0.6 0.1 82))",
+            }}
           >
-            Your Figurita Awaits
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Sign in to discover your World Cup player match
-          </p>
+            <span className="flex h-full w-full items-center justify-center rounded-full bg-card text-4xl">
+              ⚽
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">
+              World Cup 2026
+            </p>
+            <h1 className="font-display text-6xl">Your Figurita Awaits</h1>
+            <p className="text-base text-muted-foreground">
+              Answer a few questions and we'll match you to your World Cup player.
+            </p>
+          </div>
         </div>
 
         <button
           type="button"
           onClick={handleGoogleSignIn}
-          className="inline-flex items-center gap-3 w-full justify-center rounded-md border border-neutral-300 bg-white px-6 py-3 text-sm font-medium text-neutral-800 shadow-sm hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4285F4] transition-colors"
+          className="inline-flex w-full items-center justify-center gap-3 rounded-lg border border-neutral-300 bg-white px-6 py-3.5 text-sm font-semibold text-neutral-800 shadow-sm transition-colors hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4285F4]"
         >
           <GoogleLogo />
           Continue with Google
         </button>
+
+        <p className="text-xs text-muted-foreground">Six questions. One scouting report.</p>
       </div>
     </div>
   );

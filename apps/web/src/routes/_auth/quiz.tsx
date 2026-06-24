@@ -80,16 +80,11 @@ function RoleInputStep({ onSubmit }: { onSubmit: (role: string) => Promise<void>
       style={{ backgroundColor: "color-mix(in oklch, var(--team-accent) 8%, var(--background))" }}
     >
       <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-3">
+        <div className="space-y-3 text-center">
           <p className="text-5xl" aria-hidden="true">
             🔭
           </p>
-          <h1
-            className="text-4xl font-bold tracking-tight"
-            style={{ fontFamily: "var(--font-display, Impact, sans-serif)" }}
-          >
-            Scouting Mission
-          </h1>
+          <h1 className="font-display text-5xl">Scouting Mission</h1>
           <p className="text-lg text-muted-foreground">
             What position do you play? Tell us your role and we'll find your World Cup match.
           </p>
@@ -156,38 +151,48 @@ function AnsweringStep({
 }) {
   const { questions, current } = state;
   const { question, answers } = questions[current];
+  const progress = ((current + 1) / questions.length) * 100;
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-start px-6 py-12"
+      className="flex min-h-screen flex-col items-center justify-center px-6 py-12"
       style={{ backgroundColor: "color-mix(in oklch, var(--team-accent) 8%, var(--background))" }}
     >
-      <div className="w-full max-w-xl space-y-6">
-        <div className="flex items-center justify-between">
-          <h2
-            className="text-xl font-bold"
-            style={{ fontFamily: "var(--font-display, Impact, sans-serif)" }}
-          >
-            Scouting Mission
-          </h2>
-          <span className="text-sm text-muted-foreground font-mono">
-            {current + 1} / {questions.length}
-          </span>
+      <div className="w-full max-w-xl space-y-7">
+        <div className="space-y-3">
+          <div className="flex items-end justify-between">
+            <h2 className="font-display text-2xl">Scouting Mission</h2>
+            <span className="font-mono text-sm text-muted-foreground">
+              {current + 1} / {questions.length}
+            </span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{ width: `${progress}%`, backgroundColor: "var(--team-accent)" }}
+            />
+          </div>
         </div>
 
-        <p className="whitespace-pre-wrap text-base leading-relaxed">{question}</p>
+        <p className="whitespace-pre-wrap text-lg leading-relaxed">{question}</p>
 
         <div className="flex flex-col gap-3">
           {answers.map((option) => (
             <button
               key={option.key}
               type="button"
-              className="group relative h-auto w-full rounded-lg border-2 px-4 py-3 text-left text-base font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:bg-[color-mix(in_oklch,var(--team-accent)_15%,transparent)]"
-              style={{ borderColor: "var(--team-accent)" }}
+              className="group flex w-full items-center gap-3.5 rounded-xl border px-4 py-3.5 text-left text-base font-medium transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+              style={{
+                borderColor: "color-mix(in oklch, var(--team-accent) 40%, transparent)",
+                backgroundColor: "color-mix(in oklch, var(--team-accent) 7%, transparent)",
+              }}
               onClick={() => onAnswer(option.key)}
             >
-              <span className="font-bold shrink-0 mr-2" style={{ color: "var(--team-accent)" }}>
-                {option.key}.
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold text-white transition-transform group-hover:scale-110"
+                style={{ backgroundColor: "var(--team-accent)" }}
+              >
+                {option.key}
               </span>
               <span>{option.text}</span>
             </button>

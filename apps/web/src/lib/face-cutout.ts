@@ -2,16 +2,25 @@ import { env } from "@q-goal/env/web";
 
 const cache = new Map<number, string>();
 
-/** Threshold values for green-screen chroma-key detection. */
-const GREEN_CHANNEL_MIN = 80;
-const GREEN_OVER_RED_RATIO = 1.2;
-const GREEN_OVER_BLUE_RATIO = 1.2;
-/** Alpha multiplier for soft edge pixels (partial green match). */
-const EDGE_ALPHA_FACTOR = 0.3;
+/**
+ * "Greenness" of a pixel = how far its green channel rises above the stronger
+ * of red/blue. Background screen pixels score high; skin and hair score low or
+ * negative. Two thresholds turn this into a soft matte so edges feather instead
+ * of leaving a hard, aliased halo.
+ */
+const GREEN_KNOCKOUT = 55; // greenness at/above this → fully transparent
+const GREEN_KEEP = 18; // greenness at/below this → fully opaque
+/**
+ * Despill strength. Green light bounces off the screen onto the subject, tinting
+ * skin and hair. We pull the green channel back down toward red/blue, keeping a
+ * sliver of the excess so the result doesn't look flat.
+ */
+const DESPILL_RETAIN = 0.15;
 
 /**
  * Loads the player's face image from the genai service and returns a data URL
- * with the green-screen background removed via canvas chroma-key knockout.
+ * with the green-screen background removed via canvas chroma-key knockout and
+ * green-spill suppression.
  *
  * Returns null when the image fails to load, is blocked by CORS, or the
  * environment lacks canvas support. Results are cached per playerId so
@@ -44,26 +53,23 @@ async function loadAndKnockout(playerId: number): Promise<string | null> {
   let imageData: ImageData;
   try {
     imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  } catch (err) {
-    if (err instanceof DOMException && err.name === "SecurityError") {
-      return null;
-    }
+  } catch {
+    // Tainted canvas (CORS) or unsupported — caller falls back gracefully.
     return null;
   }
 
-  applyChromaKey(imageData);
+  knockoutGreen(imageData);
   ctx.putImageData(imageData, 0, 0);
 
   return canvas.toDataURL("image/png");
 }
 
 /**
- * Mutates the pixel buffer in-place, removing green-dominant pixels.
- * Edge pixels that only partially match the green criteria receive a soft
- * alpha (feathering) rather than full transparency, producing smoother cutout
- * borders without a hard staircase edge.
+ * Mutates the pixel buffer in place: feathers green-screen pixels to
+ * transparent on a greenness ramp and suppresses green spill on everything we
+ * keep, so faces don't end up blotched or rimmed with green.
  */
-function applyChromaKey(imageData: ImageData): void {
+function knockoutGreen(imageData: ImageData): void {
   const data = imageData.data;
 
   for (let i = 0; i < data.length; i += 4) {
@@ -71,18 +77,31 @@ function applyChromaKey(imageData: ImageData): void {
     const g = data[i + 1] ?? 0;
     const b = data[i + 2] ?? 0;
 
-    const isGreenOverRed = g > r * GREEN_OVER_RED_RATIO;
-    const isGreenOverBlue = g > b * GREEN_OVER_BLUE_RATIO;
-    const isGreenBright = g > GREEN_CHANNEL_MIN;
+    const maxRB = Math.max(r, b);
+    const greenness = g - maxRB;
 
-    const matchCount = [isGreenOverRed, isGreenOverBlue, isGreenBright].filter(Boolean).length;
-
-    if (matchCount === 3) {
-      data[i + 3] = 0;
-    } else if (matchCount === 2) {
-      const currentAlpha = data[i + 3] ?? 255;
-      data[i + 3] = Math.round(currentAlpha * EDGE_ALPHA_FACTOR);
+    // Soft matte: opaque below GREEN_KEEP, transparent above GREEN_KNOCKOUT,
+    // linear in between for a feathered edge.
+    let alpha = 1;
+    if (greenness >= GREEN_KNOCKOUT) {
+      alpha = 0;
+    } else if (greenness > GREEN_KEEP) {
+      alpha = 1 - (greenness - GREEN_KEEP) / (GREEN_KNOCKOUT - GREEN_KEEP);
     }
+
+    if (alpha === 0) {
+      data[i + 3] = 0;
+      continue;
+    }
+
+    // Despill: clamp the green channel toward red/blue so spill on the subject
+    // reads as neutral instead of sickly green.
+    if (g > maxRB) {
+      data[i + 1] = Math.round(maxRB + (g - maxRB) * DESPILL_RETAIN);
+    }
+
+    const currentAlpha = data[i + 3] ?? 255;
+    data[i + 3] = Math.round(currentAlpha * alpha);
   }
 }
 

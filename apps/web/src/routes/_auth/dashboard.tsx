@@ -44,8 +44,8 @@ function DashboardPage() {
     <div className="min-h-screen" style={{ "--team-accent": teamAccent } as React.CSSProperties}>
       <div
         id="dashboard-share-target"
-        className="p-6 space-y-6"
-        style={{ backgroundColor: `color-mix(in oklch, ${teamAccent} 15%, transparent)` }}
+        className="mx-auto max-w-4xl space-y-7 px-5 py-8"
+        style={{ backgroundColor: `color-mix(in oklch, ${teamAccent} 13%, transparent)` }}
       >
         <DashboardHeader
           name={session.data?.user.name ?? ""}
@@ -54,9 +54,16 @@ function DashboardPage() {
           team={team}
         />
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="space-y-1">
+          <h1 className="font-display text-4xl sm:text-5xl">Your figurita pack</h1>
+          <p className="text-muted-foreground">
+            Based on how you play, here's who you'd be on the pitch.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {data.assignments.length === 0 ? (
-            <p className="col-span-full text-center opacity-70">No results yet</p>
+            <p className="col-span-full text-center text-muted-foreground">No results yet</p>
           ) : (
             data.assignments.map((assignment) => (
               <PlayerCard key={assignment.player.id} assignment={assignment} />
@@ -64,13 +71,28 @@ function DashboardPage() {
           )}
         </div>
 
-        {data.outro && <p className="text-base leading-relaxed">{data.outro}</p>}
+        {data.outro && (
+          <p
+            className="border-l-2 pl-4 text-base leading-relaxed text-muted-foreground"
+            style={{ borderColor: "var(--team-accent)" }}
+          >
+            {data.outro}
+          </p>
+        )}
       </div>
 
-      <div className="flex gap-3 p-6">
-        <Button disabled>Download PNG</Button>
-        <Button disabled>Share</Button>
-        <Button variant="outline" onClick={() => setRedoOpen(true)}>
+      <div className="mx-auto flex max-w-4xl flex-wrap gap-3 border-t border-foreground/10 px-5 py-5">
+        <Button
+          disabled
+          title="Coming soon"
+          style={{ backgroundColor: "var(--team-accent)", borderColor: "var(--team-accent)" }}
+        >
+          Download PNG
+        </Button>
+        <Button disabled title="Coming soon" variant="outline">
+          Share
+        </Button>
+        <Button variant="ghost" className="ml-auto" onClick={() => setRedoOpen(true)}>
           Redo quiz
         </Button>
       </div>
