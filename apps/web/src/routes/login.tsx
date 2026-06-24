@@ -53,7 +53,7 @@ function RouteComponent() {
         <div className="space-y-5">
           {/* Foil-stamped emblem — the sticker-pack hook. */}
           <div
-            className="foil-shimmer relative mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full p-[2px] shadow-lg shadow-black/30"
+            className="relative mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full p-[2px] shadow-lg shadow-black/30"
             style={{
               backgroundImage:
                 "linear-gradient(150deg, oklch(0.88 0.11 92), oklch(0.62 0.1 82) 40%, oklch(0.95 0.05 95) 62%, oklch(0.6 0.1 82))",

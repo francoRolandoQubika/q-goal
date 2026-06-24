@@ -44,7 +44,7 @@ function DashboardPage() {
     <div className="min-h-screen" style={{ "--team-accent": teamAccent } as React.CSSProperties}>
       <div
         id="dashboard-share-target"
-        className="mx-auto max-w-4xl space-y-7 px-5 py-8"
+        className="mx-auto max-w-5xl space-y-7 px-5 py-8"
         style={{ backgroundColor: `color-mix(in oklch, ${teamAccent} 13%, transparent)` }}
       >
         <DashboardHeader
@@ -61,7 +61,7 @@ function DashboardPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {data.assignments.length === 0 ? (
             <p className="col-span-full text-center text-muted-foreground">No results yet</p>
           ) : (
@@ -81,7 +81,7 @@ function DashboardPage() {
         )}
       </div>
 
-      <div className="mx-auto flex max-w-4xl flex-wrap gap-3 border-t border-foreground/10 px-5 py-5">
+      <div className="mx-auto flex max-w-5xl flex-wrap gap-3 border-t border-foreground/10 px-5 py-5">
         <Button
           disabled
           title="Coming soon"

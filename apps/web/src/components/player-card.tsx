@@ -61,7 +61,7 @@ export function PlayerCard({ assignment }: PlayerCardProps) {
       <div className="overflow-hidden rounded-[1rem] bg-card">
         {/* Photo panel — team-color glow with the cut-out player rising out of it. */}
         <div
-          className="foil-shimmer relative aspect-[4/5] overflow-hidden"
+          className="relative aspect-square overflow-hidden"
           style={{
             backgroundColor: "color-mix(in oklch, var(--team-accent) 32%, var(--card))",
             backgroundImage:
@@ -72,7 +72,7 @@ export function PlayerCard({ assignment }: PlayerCardProps) {
             <img
               src={cutoutUrl}
               alt={player.name}
-              className="absolute bottom-0 left-1/2 w-[112%] max-w-none -translate-x-1/2 object-contain object-bottom drop-shadow-[0_8px_14px_rgba(0,0,0,0.45)]"
+              className="absolute bottom-0 left-1/2 w-[96%] max-w-none -translate-x-1/2 object-contain object-bottom drop-shadow-[0_8px_14px_rgba(0,0,0,0.45)]"
             />
           ) : imgFailed ? (
             <div className="flex h-full w-full items-center justify-center font-display text-8xl text-white/85">

@@ -64,39 +64,3 @@ body {
   letter-spacing: 0.015em;
   line-height: 0.95;
 }
-
-/* Holographic foil sweep used on collectible stickers. Disabled when the user
-   prefers reduced motion. */
-.foil-shimmer::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    115deg,
-    transparent 28%,
-    oklch(0.95 0.06 95 / 0.35) 46%,
-    oklch(1 0 0 / 0.45) 50%,
-    oklch(0.95 0.06 95 / 0.35) 54%,
-    transparent 72%
-  );
-  background-size: 250% 100%;
-  background-position: 200% 0;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .foil-shimmer::after {
-    animation: foil-sweep 5s ease-in-out infinite;
-  }
-}
-
-@keyframes foil-sweep {
-  0% {
-    background-position: 200% 0;
-  }
-  55%,
-  100% {
-    background-position: -120% 0;
-  }
-}
