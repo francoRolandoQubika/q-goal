@@ -78,7 +78,6 @@ services:
       - ./genai/faces:/app/faces:ro
       - ./genai/embeddings.npy:/app/embeddings.npy:ro
       - ./genai/embeddings_clip.npy:/app/embeddings_clip.npy:ro
-      - ./genai/embeddings_insightface.npy:/app/embeddings_insightface.npy:ro
     env_file:
       - path: genai/.env
         required: false
