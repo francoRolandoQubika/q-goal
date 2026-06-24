@@ -29,6 +29,8 @@ Packages in `packages/*` are imported as `@q-goal/<name>` — never use relative
 | React component        | `src/components/{name}.tsx` | `apps/web/src/components/app-bar.tsx` |
 | Auth client lib        | `src/lib/auth-client.ts`    | `apps/web/src/lib/auth-client.ts`     |
 | Local type definitions | `src/lib/{domain}-types.ts` | `apps/web/src/lib/dashboard-types.ts` |
+| Web utility lib        | `src/lib/{name}.ts`         | `apps/web/src/lib/face-cutout.ts`     |
+| Brand / global CSS     | `src/styles/{name}.css`     | `apps/web/src/styles/brand.css`       |
 | App entry              | `src/main.tsx`              | `apps/web/src/main.tsx`               |
 
 ### apps/server (Hono)
