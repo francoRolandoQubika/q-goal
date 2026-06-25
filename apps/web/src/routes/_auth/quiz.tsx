@@ -101,11 +101,11 @@ function RoleInputStep({ onSubmit }: { onSubmit: (role: string) => Promise<void>
           <form.Field name="role">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Your role</Label>
+                <Label htmlFor={field.name}>Your role inside the company</Label>
                 <Input
                   id={field.name}
                   name={field.name}
-                  placeholder="e.g. Goalkeeper, Midfielder, Coach"
+                  placeholder="e.g. Software Developer, QA Analyst, Project Manager, etc..."
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
@@ -128,7 +128,7 @@ function RoleInputStep({ onSubmit }: { onSubmit: (role: string) => Promise<void>
             {({ canSubmit, isSubmitting }) => (
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
                 disabled={!canSubmit || isSubmitting}
                 style={{ backgroundColor: "var(--team-accent)", borderColor: "var(--team-accent)" }}
               >

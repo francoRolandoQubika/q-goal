@@ -5,6 +5,7 @@ import { useState } from "react";
 import { DashboardHeader } from "../../components/dashboard-header";
 import { PlayerCard } from "../../components/player-card";
 import { RedoQuizDialog } from "../../components/redo-quiz-dialog";
+import type { Assignment } from "../../lib/dashboard-types";
 import { deleteQuizResult, fetchQuizResult } from "../../lib/quiz-result";
 
 export const Route = createFileRoute("/_auth/dashboard")({
@@ -30,6 +31,33 @@ const TEAM_ACCENTS: Record<string, string> = {
   usa: "oklch(0.50 0.20 250)",
 };
 
+/** Nations you collected the most figuritas from. On a tie, every leader is
+ *  returned in order of first appearance so the page accent stays stable. */
+function topNations(assignments: Assignment[]): string[] {
+  const counts = new Map<string, number>();
+  for (const { player } of assignments) {
+    if (player.team) counts.set(player.team, (counts.get(player.team) ?? 0) + 1);
+  }
+  const max = Math.max(0, ...counts.values());
+  if (max === 0) return [];
+  const leaders: string[] = [];
+  for (const { player } of assignments) {
+    if (player.team && counts.get(player.team) === max && !leaders.includes(player.team)) {
+      leaders.push(player.team);
+    }
+  }
+  return leaders;
+}
+
+/** Plain-language explanation of what the nation badge means. */
+function nationSummary(teams: string[]): string {
+  if (teams.length <= 1) {
+    return `Most of your figuritas play for ${teams[0] ?? "your nation"} — that's the badge you'd wear.`;
+  }
+  const list = `${teams.slice(0, -1).join(", ")} and ${teams[teams.length - 1]}`;
+  return `It's a tie at the top — your figuritas split between ${list}, so any of them could be your badge.`;
+}
+
 function DashboardPage() {
   const { session } = Route.useRouteContext();
   const data = Route.useLoaderData();
@@ -37,8 +65,9 @@ function DashboardPage() {
   const router = useRouter();
   const navigate = useNavigate();
 
-  const team = data.assignments[0]?.player.team ?? "";
-  const teamAccent = TEAM_ACCENTS[team.toLowerCase()] ?? "oklch(0.60 0.22 250)";
+  const teams = topNations(data.assignments);
+  const primaryTeam = teams[0] ?? "";
+  const teamAccent = TEAM_ACCENTS[primaryTeam.toLowerCase()] ?? "oklch(0.60 0.22 250)";
 
   return (
     <div className="min-h-screen" style={{ "--team-accent": teamAccent } as React.CSSProperties}>
@@ -51,14 +80,12 @@ function DashboardPage() {
           name={session.data?.user.name ?? ""}
           avatarUrl={session.data?.user.image}
           role={data.role}
-          team={team}
+          teams={teams}
         />
 
         <div className="space-y-1">
           <h1 className="font-display text-4xl sm:text-5xl">Your figurita pack</h1>
-          <p className="text-muted-foreground">
-            Based on how you play, here's who you'd be on the pitch.
-          </p>
+          <p className="text-muted-foreground">{nationSummary(teams)}</p>
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

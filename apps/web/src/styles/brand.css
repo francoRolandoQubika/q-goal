@@ -11,6 +11,13 @@
   --secondary: oklch(0.6 0.22 250); /* vivid accent — electric blue */
   --secondary-foreground: oklch(0.98 0 0); /* white text on blue */
   --team-accent: oklch(0.6 0.22 250); /* per-team override — defaults to vivid accent */
+  /* Surfaces & controls inherit the album palette (not neutral grays) */
+  --popover: oklch(0.99 0.008 88); /* dialogs/menus — match the chalk card surface */
+  --popover-foreground: oklch(0.18 0.06 145);
+  --muted-foreground: oklch(0.46 0.03 145); /* legible secondary text, pitch-tinted */
+  --border: oklch(0.86 0.025 145); /* warm divider instead of flat gray */
+  --input: oklch(0.78 0.035 145); /* visible field border on chalk */
+  --ring: oklch(0.78 0.15 86); /* gold-foil focus ring */
 }
 
 /* Dark mode: pitch-night base, gold-foil primary, electric-blue accent */
@@ -24,6 +31,13 @@
   --secondary: oklch(0.6 0.22 250); /* vivid accent — electric blue */
   --secondary-foreground: oklch(0.98 0 0);
   --team-accent: oklch(0.6 0.22 250); /* per-team override — defaults to vivid accent */
+  /* Surfaces & controls inherit the album palette (not neutral grays) */
+  --popover: oklch(0.25 0.045 152); /* dialogs/menus — match the pitch card surface */
+  --popover-foreground: oklch(0.96 0.02 88);
+  --muted-foreground: oklch(0.78 0.03 88); /* legible secondary text, chalk-tinted */
+  --border: oklch(0.96 0.02 88 / 14%); /* warm hairline divider */
+  --input: oklch(0.96 0.02 88 / 32%); /* visible field border on pitch */
+  --ring: oklch(0.79 0.15 86); /* gold-foil focus ring */
 }
 
 @theme inline {

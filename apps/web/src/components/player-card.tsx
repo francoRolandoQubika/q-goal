@@ -86,7 +86,9 @@ export function PlayerCard({ assignment }: PlayerCardProps) {
           {player.position && (
             <span
               className="absolute left-3 top-3 inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-white/30 px-2 font-mono text-xs font-bold text-white shadow-md backdrop-blur-sm"
-              style={{ backgroundColor: "color-mix(in oklch, var(--team-accent) 70%, black 12%)" }}
+              style={{
+                backgroundColor: "color-mix(in oklch, var(--team-accent) 70%, black 12%)",
+              }}
             >
               {player.position}
             </span>
@@ -102,7 +104,7 @@ export function PlayerCard({ assignment }: PlayerCardProps) {
         <div className="space-y-3 p-4">
           <div>
             <p
-              className="font-display text-base uppercase tracking-[0.2em]"
+              className="font-display text-base uppercase tracking-[0.2em] pb-2"
               style={{ color: "var(--team-accent)" }}
             >
               {title}

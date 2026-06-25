@@ -8,6 +8,8 @@ RUN --mount=type=cache,target=/root/.bun/install/cache bun install
 
 ARG VITE_SERVER_URL
 ENV VITE_SERVER_URL=${VITE_SERVER_URL}
+ARG VITE_GENAI_URL
+ENV VITE_GENAI_URL=${VITE_GENAI_URL}
 ENV NODE_ENV=production
 RUN cd apps/web && bun run build
 

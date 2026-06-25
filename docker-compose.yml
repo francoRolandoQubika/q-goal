@@ -7,6 +7,7 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         VITE_SERVER_URL: http://localhost:3000
+        VITE_GENAI_URL: http://localhost:8002
     init: true
     ports:
       - "3001:80"
